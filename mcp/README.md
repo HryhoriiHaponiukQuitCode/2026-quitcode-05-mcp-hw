@@ -1,7 +1,8 @@
 # `mcp/` — ваш власний MCP-сервер (Task A)
 
 Сюди кладете сервер LeadDesk, який будуєте в Task A: **`mcp/leaddesk-server/`**. Інших серверів
-у цій теці не треба (бонусні варіанти Task E — у [`docs/walkthrough.md`](../docs/walkthrough.md)).
+у цій теці не треба. Єдиний виняток — іграшковий сервер бонусного варіанта E2, `mcp/poisoned-demo/`
+(див. [`docs/walkthrough.md`](../docs/walkthrough.md), Task E).
 Покроково — [`docs/walkthrough.md`](../docs/walkthrough.md), Task A. Зразок форми — сервер курсів
 НБУ з воркшопу: [`examples/nbu-rates-mcp/`](../examples/nbu-rates-mcp/).
 
@@ -27,6 +28,8 @@ mcp/leaddesk-server/
    На воркшопі — `"@modelcontextprotocol/server": "2.1.0"` і `"zod": "4.6.5"`.
    Пакета `@modelcontextprotocol/sdk` тут бути не повинно: це стара лінія SDK, і вона оновлюється
    в ті самі дні, що й нова, тож «свіжа версія» нічого не доводить.
+   Виняток — бонусний варіант E1 (HTTP): йому потрібен ще `"@modelcontextprotocol/node": "2.1.0"`, теж
+   точною версією і в цьому самому `package.json`.
 3. **JavaScript-модулі `.mjs`, а не TypeScript.** Кореневий `tsconfig.json` включає `**/*.ts` і
    `**/*.mts`, тож `next build` перевіряв би й ваш сервер. А на Vercel залежностей сервера немає,
    і збірка застосунку впала б на `Cannot find module`. Перевірено на цьому репозиторії.

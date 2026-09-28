@@ -41,7 +41,7 @@
 
 ```bash
 cd examples/nbu-rates-mcp
-npm install
+npm ci        # рівно те, що в package-lock.json; сам lock-файл не змінюється
 ```
 
 `node server.mjs` запускає сервер і чекає клієнта на stdin — це нормально, термінал просто «висить».
