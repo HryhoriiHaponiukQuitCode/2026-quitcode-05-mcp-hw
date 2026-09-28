@@ -31,8 +31,10 @@
 |---|---|
 | `src/leaddesk.mjs` | фабрика `createLeadDeskServer()`, сховище в пам'яті, два інструменти, ресурс |
 | `src/server.mjs` | stdio: `serveStdio(createLeadDeskServer)` |
+| `src/http.mjs` | бонус E1: Streamable HTTP лише на `127.0.0.1:3333`, гварди Host і Origin викликано в обробнику |
 | `scripts/check-contract.mjs` | перевірка контракту через Inspector (C1–C16) і `--self-test` на 9 мутантах |
 | `scripts/make-inspector-artifacts.sh` | чотири JSON у `docs/mcp/` командами walkthrough + перевірка, що це чистий JSON |
+| `scripts/check-http.sh` | бонус E1: чотири `curl` (200/403/403/400), атаки на гварди, стан між запитами, абляція |
 
 ## Запуск і перевірка
 
@@ -44,6 +46,7 @@ npx -y @modelcontextprotocol/inspector@2.8.0 --cli node mcp/leaddesk-server/src/
 node mcp/leaddesk-server/scripts/check-contract.mjs            # 16/16 PASS, exit 0
 node mcp/leaddesk-server/scripts/check-contract.mjs --self-test # кожен мутант ловить своя перевірка
 bash mcp/leaddesk-server/scripts/make-inspector-artifacts.sh    # оновити docs/mcp/*.json
+bash mcp/leaddesk-server/scripts/check-http.sh                  # E1: HTTP-варіант, exit 0
 ```
 
 ## Підключення до Claude Code

@@ -1,4 +1,4 @@
-LeadDesk MCP contract check · server mcp/leaddesk-server · Inspector 2.8.0 · 2026-09-28T11:42:11.193Z
+LeadDesk MCP contract check · server mcp/leaddesk-server · Inspector 2.8.0 · 2026-09-28T11:47:06.933Z
 PASS C1 tools/list: exactly leaddesk_find_leads and leaddesk_set_lead_status, readOnlyHint true/false
 PASS C2 tools/list: every parameter has a description; enums, id pattern and bounds come from the app
 PASS C3 tool descriptions say what the tool does and whether it changes data
