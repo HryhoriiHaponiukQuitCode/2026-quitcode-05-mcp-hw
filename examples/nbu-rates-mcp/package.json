@@ -1,0 +1,18 @@
+{
+  "name": "nbu-rates-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Official NBU exchange rates as an MCP server (stdio). The server built live in QuitCode Workshop 5.",
+  "type": "module",
+  "main": "server.mjs",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.1.0",
+    "zod": "4.6.5"
+  }
+}
