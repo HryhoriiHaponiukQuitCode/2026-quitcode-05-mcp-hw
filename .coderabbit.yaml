@@ -1,16 +1,17 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 #
-# CodeRabbit config — review of QuitCode Workshop 4 homework PRs.
-# Workshop: "Agent Skills: упаковка експертизи команди".
-# Deliverables are agent skills (.claude/skills/**), evidence documents (docs/**)
-# and the app changes the skills helped to make (app/**, lib/**, components/**).
-# Scope note: Task C is the skill only; the «запит на кошторис» feature is built
-# by the agent during the Task D A/B runs and carried over from run B.
+# CodeRabbit config — review of QuitCode Workshop 5 homework PRs.
+# Workshop: "MCP: інтеграції для AI-агентів".
+# Deliverables: the participant's own stdio MCP server (mcp/leaddesk-server/),
+# ready servers connected with least privilege (.mcp.json, .claude/settings.json,
+# supabase/**), and evidence documents (docs/mcp/**).
+# Every check is STATIC over committed files: no network, no npm, no Node.
+# The app itself (app/, lib/, components/) does not change in this workshop.
 
 language: "uk-UA"
 tone_instructions: >
   Ментор воркшопу QuitCode. Відповідай українською, доброзичливо але вимогливо.
-  Оцінюєш скіли агента, докази їх перевірки й код, який вони допомогли написати.
+  Оцінюєш MCP-сервер учасника, підключення з найменшими правами й докази.
   Статуси: ✅ зроблено, ⚠️ частково, ❌ пропущено.
 
 early_access: false
@@ -42,29 +43,31 @@ reviews:
       - "github-actions[bot]"
 
   # ── File filters — every graded path listed explicitly ────────
-  # The vendored Vercel skill is third-party text: its SKILL.md is reviewed
-  # (evidence of a real, pinned install), its 70+ rule files are not.
   path_filters:
+    - "mcp/**"
+    - ".mcp.json"
     - ".claude/**"
-    - "!.claude/skills/vercel-react-best-practices/rules/**"
-    - "!.claude/skills/vercel-react-best-practices/AGENTS.md"
-    - "!.claude/skills/vercel-react-best-practices/README.md"
-    - ".agents/**"
     - ".cursor/**"
-    - "skills-lock.json"
+    - "supabase/**"
+    - "docs/**"
+    - "tests/**"
+    - "**/*.spec.ts"
+    - ".playwright-mcp/**"
+    - "body.json"
     - "AGENTS.md"
     - "CLAUDE.md"
-    - "docs/**"
     - "app/**"
     - "lib/**"
     - "components/**"
     - "proxy.ts"
     - "next.config.ts"
+    - "tsconfig.json"
     - "package.json"
     - ".env*"
     - ".gitignore"
     - "tools/**"
     - "materials/**"
+    - "examples/**"
     - ".github/**"
     - ".coderabbit.yaml"
     - "!**/node_modules/**"
@@ -73,265 +76,285 @@ reviews:
 
   # ── Path-specific review instructions ─────────────────────────
   path_instructions:
-    - path: ".claude/skills/vercel-react-best-practices/**"
+    - path: "mcp/leaddesk-server/**"
       instructions: |
-        Task A — сторонній скіл, встановлений через `npx skills@1.7.0 add` з
-        закріпленим тегом і `--copy`. Зміст файлів Vercel НЕ рев'юй (це чужий
-        текст; rules/ і AGENTS.md навмисно виключені з рев'ю). Перевір лише:
-        SKILL.md — справжній файл з frontmatter `name: vercel-react-best-practices`;
-        шлях не є текстовим файлом зі шляхом (так виглядає закомічений symlink —
-        ❌: у клоні на Windows скіла не видно). Будь-які правки учасника у файлах
-        Vercel — ⚠️: чужий скіл оновлюють новим тегом, а не редагують.
+        Task A — власний stdio MCP-сервер LeadDesk. Статичне рев'ю — do NOT
+        run npm, Node or the Inspector. Вимоги — mcp/README.md.
+        package.json: окремий від застосунку, "type": "module"; залежності —
+        лише "@modelcontextprotocol/server" і "zod" з ТОЧНИМИ версіями (x.y.z,
+        без ^, ~, *, latest); "@modelcontextprotocol/node" дозволено лише
+        точною версією (бонус E1); @modelcontextprotocol/sdk — ❌. Поруч —
+        package-lock.json і README.md (як запустити, перевірити Inspector'ом,
+        підключити до Claude Code).
+        src/: лише JavaScript-модулі .mjs (файл .ts під mcp/ ламає next build
+        — ❌); serveStdio(factory); жодного console.log (stdout — канал
+        протоколу; console.error без персональних даних — нормально).
+        Рівно два інструменти й один ресурс:
+        leaddesk_find_leads — readOnlyHint: true; status —
+        z.enum з new, contacted, qualified, won, lost, any; limit — ціле 1–50;
+        повертає найновіші першими лише id, company, status, source, budget,
+        createdAt (fullName, email, message у відповіді — ⚠️).
+        leaddesk_set_lead_status — readOnlyHint: false; leadId з regex
+        ^lead_\d{4}$; status — z.enum рівно з п'яти статусів LEAD_STATUSES
+        (lib/types.ts); reason — рядок 3–500; невідомий лід і той самий статус
+        повертають isError: true з підказкою; успіх змінює статус у пам'яті й
+        повертає в structuredContent новий стан і запис аудиту щонайменше
+        { action, leadId, at }; опис інструмента каже, що він змінює дані.
+        Ресурс leaddesk://reference/statuses, mimeType text/markdown, з
+        поясненням п'яти статусів для команди.
+        inputSchema — об'єкт Zod-полів, `.describe(` на КОЖНОМУ полі (поле без
+        опису — ⚠️). Вигадані статуси (hot, cold) чи формат id (ld_1001) — ❌.
+        Фікстура: шлях від import.meta.url (або LEADDESK_FIXTURE); файл лише
+        читається — writeFile у fixtures/ — ❌. fixtures/leads.json має бути
+        незмінною копією materials/leads.json (20 лідів lead_0001–lead_0020).
+        Якщо є src/http.mjs — це бонус E1: createMcpHandler(factory) +
+        toNodeHandler з @modelcontextprotocol/node; гварди
+        localhostHostValidation() і localhostOriginValidation() ВИКЛИКАНО в
+        обробнику запиту до mcp(req, res) (передати їх опцією в toNodeHandler
+        — ❌: опцію мовчки ігнорують); listen лише на 127.0.0.1.
 
-    - path: "skills-lock.json"
+    - path: "mcp/poisoned-demo/**"
       instructions: |
-        Task A — lock-файл skills CLI. Перевір запис `vercel-react-best-practices`:
-        `source: vercel-labs/agent-skills`, `ref` — незмінний тег (напр.
-        `agent-skills-063bee9…`) або повний SHA коміту, а не гілка й не порожнє
-        поле. Без `ref` — ❌ (версію не закріплено).
+        Бонус E2 — іграшковий сервер з отруєним описом інструмента. Окремий
+        package.json з точними версіями, без @modelcontextprotocol/sdk.
+        Отруєний опис може вказувати лише на файл-приманку зі значеннями
+        change-me-… Будь-яке посилання на справжні .env, .env.local,
+        ~/.ssh, токени чи інші реальні секрети — ❌. Статичне рев'ю — do NOT
+        run it.
 
-    - path: ".agents/**"
+    - path: "mcp/**"
       instructions: |
-        Друга копія скіла в `.agents/skills/` — ⚠️: з'являється, якщо встановити
-        без `--copy` або з `-a cursor`. Cursor і так читає `.claude/skills/`, а дві
-        копії розходяться після оновлення. Назви це прямо.
+        У mcp/ очікуються лише mcp/leaddesk-server/ (Task A) і, для бонусу E2,
+        mcp/poisoned-demo/. node_modules у git — ❌.
 
-    - path: ".claude/skills/building-client-form/**"
+    - path: "docs/mcp/*.json"
       instructions: |
-        Task B — власний скіл лише з інструкцій. Frontmatter: `name:
-        building-client-form` (дорівнює назві теки, інакше ❌); `description`
-        до 1024 символів — що робить скіл І коли застосовувати, з українськими
-        фразами-тригерами; без «коли» — ⚠️. Тіло — конкретний патерн форми:
-        Server Action перевіряє сесію/права й валідує дані ВСЕРЕДИНІ дії;
-        useActionState; доступні помилки полів (label, aria-invalid,
-        aria-describedby, role="alert"); введене не зникає після помилки; дія
-        повертає лише `{ status, … }`, а не рядок з бази; жодних персональних
-        даних у журналах; повільні побічні ефекти — в after(). Правила Vercel —
-        посиланням за id (server-auth-actions, server-after-nonblocking,
-        server-serialization…), а не копією тексту (копія — ⚠️). Розділ Verify з
-        перевірюваними пунктами. Загальні фрази на кшталт «пиши якісні форми» —
-        ⚠️.
+        Task A — вивід Inspector CLI 2.8.0, закомічений як доказ. Не рев'юй як
+        код. Перевір: tools-list.json — рівно два інструменти
+        leaddesk_find_leads і leaddesk_set_lead_status, у кожного непорожній
+        description, у кожної властивості inputSchema — description,
+        annotations.readOnlyHint true у find і false у set; set-status.json —
+        успішний виклик зі structuredContent, де є новий статус і запис аудиту
+        з action, leadId, at; bad-input.json містить "isError": true з текстом
+        валідації; resource-read.json містить leaddesk://reference/statuses і
+        mimeType. Файл, схожий на вручну написаний JSON замість виводу
+        Inspector'а (немає content/structuredContent), — ⚠️.
 
-    - path: ".claude/skills/integrating-n8n-webhooks/**"
+    - path: ".mcp.json"
       instructions: |
-        Task C — власний скіл з довідкою й скриптами, упакований з
-        materials/n8n-webhooks-brief.md. SKILL.md: `name` = назва теки,
-        `description` з «що» і «коли» та тригерами; стислий контракт, чекліст,
-        правила зупинки (без винятків «якщо задача потребує» — інакше ❌),
-        розділ перевірки; деталі — у references/*.md з прямими посиланнями з
-        SKILL.md. Дослівна копія записки в SKILL.md — ⚠️. Звір контракт із
-        запискою: змінні N8N_WEBHOOK_BASE_URL, N8N_WEBHOOK_TOKEN,
-        N8N_CALLBACK_SECRET, APP_BASE_URL — лише серверні; заголовки
-        x-n8n-token, idempotency-key, x-correlation-id; підпис колбека
-        `sha256=<hex HMAC-SHA256(secret, "${timestamp}.${rawBody}")>`, перевірка
-        на сирому тілі з перевіркою довжини й timingSafeEqual, вікно 300 с,
-        ідемпотентність; довгі воркфлоу — лише 202 + колбек; жодних
-        /webhook-test/ URL. Правила Vercel server-auth-actions і
-        server-after-nonblocking — посиланням, не копією. Статичне рев'ю — do
-        NOT attempt to execute anything.
+        Task B — носій прав. Очікувані ключі: supabase, vercel і figma або
+        playwright. Кожен запис з "url" має "type" (без нього Claude Code
+        читає запис як stdio — ❌). supabase: https://mcp.supabase.com/mcp з
+        project_ref= і features=; у features немає account, functions,
+        branching. vercel: https://mcp.vercel.com (або проєктний
+        /<org>/<project>). figma: https://mcp.figma.com/mcp. playwright:
+        command cmd з args "/c", "npx", … або command npx; точна версія
+        @playwright/mcp@x.y.z; є --isolated і --no-webmcp; немає --extension,
+        --cdp-endpoint, --user-data-dir, --allow-unrestricted-file-access,
+        --port, --host, --allowed-hosts; --caps без storage; у
+        --allowed-origins лише localhost або власний демо-домен. Жодного
+        @latest. Жодного секрету значенням (Bearer <токен>, sbp_, sk-, ghp_,
+        figd_) — лише ${VAR}; секрет у відкритому вигляді — ❌.
 
-    - path: ".claude/skills/integrating-n8n-webhooks/scripts/**"
+    - path: ".claude/settings.json"
       instructions: |
-        Скрипти скіла. check-contract.mjs: лише вбудовані модулі Node (без
-        npm-залежностей); ≥ 5 перевірок, кожна з id і рядком PASS/FAIL; для
-        FAIL — файл і рядок; ненульовий код виходу при будь-якому FAIL;
-        підтримка `--root <тека>`; `--help`. Перевірки мають бути справжніми:
-        перевірка, яка PASS за будь-якого коду, — ⚠️. Жоден скрипт не друкує
-        значень секретів чи тіл запитів. mock-n8n.mjs — копія
-        tools/mock-n8n.mjs, це нормально. Статичне рев'ю — do NOT run the
-        scripts.
+        Task B — права на боці Claude Code. deny містить усі 11 інструментів
+        Vercel, що змінюють стан, точними іменами: mcp__vercel__buy_pro,
+        mcp__vercel__buy_credits, mcp__vercel__buy_addon,
+        mcp__vercel__buy_domain, mcp__vercel__deploy_to_vercel,
+        mcp__vercel__get_access_to_vercel_url,
+        mcp__vercel__import-claude-design-from-url,
+        mcp__vercel__reply_to_toolbar_thread, mcp__vercel__edit_toolbar_message,
+        mcp__vercel__change_toolbar_thread_resolve_status,
+        mcp__vercel__add_toolbar_reaction. Варіант Figma: у deny
+        mcp__figma__use_figma, mcp__figma__create_new_file,
+        mcp__figma__upload_assets, mcp__figma__generate_diagram. Варіант
+        Playwright: у deny mcp__playwright__browser_run_code_unsafe,
+        mcp__playwright__webmcp_*, mcp__playwright__browser_file_upload,
+        mcp__playwright__browser_drop (browser_evaluate рекомендовано, не
+        обов'язково). Глоби в deny дозволені. allow: жодне правило, що
+        починається з mcp__, не містить * (mcp__*, mcp__playwright__* — ❌: вони
+        автоматично схвалюють browser_run_code_unsafe і webmcp_* від сторінки);
+        execute_sql і apply_migration в allow — ❌. "deny": ["mcp__*"] як
+        рішення — ❌ (прибирає всі MCP-інструменти). Префікс кожного правила
+        mcp__<name>__ збігається з ключем у .mcp.json (або leaddesk — сервер
+        Task A зі скоупом local); плагінні імена mcp__plugin_… — ⚠️.
 
     - path: ".claude/**"
       instructions: |
-        Інші зміни в .claude/ (налаштування, інші скіли). Налаштування з
-        allowed-tools чи хуками, що дозволяють мережу або читання .env* без
-        підтвердження людини, — ⚠️. Скіл у `.claude/skills/<тека>/` без SKILL.md
-        або з `name`, що не дорівнює назві теки, — ❌.
+        Скіли WS4 у .claude/skills/ у WS5 не змінюються; зміни в них поза
+        завданням — назви це. settings.local.json у git — ⚠️ (особисті
+        налаштування). Хуки чи allow, що дозволяють мережу або читання .env*
+        без підтвердження людини, — ⚠️.
 
-    - path: "docs/skill-review*.md"
+    - path: "supabase/**"
       instructions: |
-        Task A (і бонус E1) — рев'ю стороннього скіла за чеклістом
-        docs/templates/skill-review.md, зроблене ДО встановлення. Перевір, що
-        заповнено власними спостереженнями, а не залишено шаблоном: як
-        дивились без встановлення; скрипти, allowed-tools, команди під час
-        рендеру, хуки/MCP/API-ключі, мережеві інструкції, посилання, приховані
-        інструкції; аудити (і чому CLI їх показав чи ні); ліцензія й
-        походження; 2–3 поради, звірені з документацією нашої версії; команда
-        встановлення з тегом, `--copy`, що потрапило в git; вердикт. Для E1
-        (docs/skill-review-n8n.md) — пакет czlonkowski/n8n-skills або
-        n8n-io/skills, SHA переглянутого коміту, ознаки, що його НЕ
-        встановлювали, і хоча б одне твердження пакета, звірене з
-        materials/n8n-webhooks-brief.md.
+        Task B — схема й сид Supabase, умова коректності Task C.
+        migrations/0001_leaddesk.sql — create table для лідів (і таблиць,
+        названих у docs/mcp/connections.md); статус обмежено п'ятьма
+        значеннями new, contacted, qualified, won, lost. seed/leads.sql —
+        insert рівно 20 рядків lead_0001–lead_0020, ті самі, що в
+        materials/leads.json. Інша кількість рядків — ⚠️ (A/B порівнює різні
+        дані). Жодних секретів і рядків підключення з паролем.
 
-    - path: "docs/verification.md"
+    - path: "docs/mcp/connections.md"
       instructions: |
-        Докази Task A–C. Task A: щонайменше два виправлення (більше — не
-        помилка) — у кожного id правила Vercel і коміт; для ОДНОГО з них числа
-        було/стало і як міряли (продакшн-збірка), для решти досить пояснення,
-        що і чому змінили. Менше двох виправлень, виправлення без id правила
-        або жодного виправлення з числами — ⚠️.
-        Task B: запит у свіжій сесії, який НЕ називав скіл; чи спрацював скіл і
-        як це видно (виклик Skill / читання SKILL.md); результат. Task C: скіл
-        тут лише пакують — вимагати тут запит, на який спрацював скіл, або
-        журнал мока НЕ треба (це Task D, docs/ab-validation.md). Для Task C
-        перевір вивід check-contract.mjs на коді main (з FAIL) і вивід на
-        фінальному коді (0 FAIL). Переказ шаблону без власних спостережень — ⚠️.
-        Розділ «Cursor» — бонус E3.
+        Task B — за шаблоном docs/templates/connections.md. Таблиця «Сервери»
+        — рядок на кожен сервер із .mcp.json і п'ять колонок: сервер, який
+        доступ, навіщо нам, що станеться при компрометації, чим саме звужено;
+        порожні комірки чи плейсхолдери <…> — ⚠️. Записано акаунти (особисті
+        чи одноразові), стан Vercel CLI, чому обрано Figma чи Playwright,
+        таблиці Supabase, сесії (щонайбільше один сервер із правом запису,
+        браузерний — ніколи разом із Supabase) і числа «до/після». Назви
+        клієнтських команд, організацій чи проєктів — ❌.
 
-    - path: "docs/ab-validation.md"
+    - path: "docs/mcp/evidence/**"
       instructions: |
-        Task D — A/B-перевірка скіла integrating-n8n-webhooks. Увага до
-        позначень: A — БЕЗ скіла, B — ЗІ скілом. Перевір: той самий запит з
-        materials/ab-task.md без змін; дві нові сесії з однаковою моделлю й
-        рівнем міркування; у копії A не було жодного скіла, у копії B — лише
-        integrating-n8n-webhooks (перейменування скіла або особиста копія в
-        ~/.claude/skills — ❌); tools/, materials/, docs/, README.md,
-        .coderabbit.yaml і .github/ видалено з обох копій (вони описують контракт
-        n8n; мок запускали з робочого репозиторію); однакова відповідь на
-        уточнення. Для кожного прогону — видимі скіли, чи викликав агент скіл (для
-        B), вивід check-contract.mjs на коді прогону (`--changed-since base` або
-        з позначеними FAIL старого коду з базової лінії), журнал мока, час
-        відповіді форми, чи є тіла або персональні дані в журналі сервера,
-        змінені файли й діф у docs/ab/; таблиця порівняння; висновок, що
-        спирається на ці дані. Чесне «різниці немає» з поясненням, звідки агент
-        узяв контракт (загальні знання, документація Next.js, наявний код), —
-        прийнятне. Висновок без чисел і журналів — ⚠️.
-        Окремий розділ про перенесення: фіча «запит на кошторис» у гілці — це
-        результат прогону B, і має бути сказано, як його перенесли (діф, злиття
-        чи копіювання файлів), що довелось доробити руками, вивід
-        check-contract.mjs на фінальному коді (0 FAIL) і що сценарій «форма →
-        колбек → /quotes/<id>» відпрацював уже на гілці. Фіча без такого
-        розділу (або написана в гілці замість прогону) — ⚠️.
+        Task B — докази. vercel-build-log.txt — непорожній лог білду.
+        figma-tokens.json (варіант Figma) — валідний непорожній JSON з
+        get_variable_defs. playwright-form-check.md (варіант Playwright) —
+        запит, ланцюжок інструментів, чи відправилась форма, консоль і мережа;
+        лише http://localhost:3000. mcp-before.txt і mcp-after.txt — перелік
+        інструментів третього сервера зі слів агента: у after менше; Figma —
+        в after немає use_figma, create_new_file, upload_assets,
+        generate_diagram; Playwright — у before є browser_run_code_unsafe, в
+        after немає browser_run_code_unsafe, browser_file_upload,
+        browser_drop. lead-form.spec.txt — дозволений спосіб зберегти тест.
+        ГІГІЄНА: будь-яка згадка list_teams, list_projects,
+        list_organizations чи перелік команд/організацій/проєктів — ❌.
 
-    - path: "docs/ab/**"
+    - path: "docs/mcp/verification.md"
       instructions: |
-        Діфи-докази прогонів A/B (обов'язкові: a-without-skill.diff і
-        b-with-skill.diff). Не рев'юй їх як код; переконайся лише, що вони
-        відповідають опису в docs/ab-validation.md.
+        Докази за шаблоном docs/templates/verification.md. Task A: команди
+        Inspector'а, код виходу для bad-input.json (5), запис аудиту. Task B:
+        які інструменти викликав агент, що людина схвалила вручну, як
+        отримано лог білду; Figma — whoami і витрачені виклики; Playwright —
+        ланцюжок інструментів. Розділ «Task E» — бонус. Переказ шаблону без
+        власних спостережень — ⚠️.
 
-    - path: "docs/trigger-evals.md"
+    - path: "docs/mcp/ab-generic-vs-domain.md"
       instructions: |
-        Бонус E2 — тест спрацювання власного скіла: ≥ 10 запитів, розділених на
-        «має спрацювати» і «не має»; кожен — у новій сесії; результат по
-        кожному; що змінено в description і повторний результат.
+        Task C — A/B за шаблоном docs/templates/ab-generic-vs-domain.md і
+        протоколом materials/ab-prompts.md. Полярність: A — лише Supabase у
+        профілі «client» (URL з project_ref, read_only=true і
+        features=database,docs), B — лише власний сервер Task A (команда
+        claude mcp add leaddesk -- node …). Перевір: sha256 блоку запитів =
+        3b4c90c48f32fd358bd696eb5aaf386e51f038794c0b8d8a57ff88675718058a;
+        кожен прогін — нова сесія в окремій порожній теці поза репозиторієм;
+        у /mcp рівно один сервер; однакові модель і рівень міркування;
+        таблиця рівно на 6 рядків (запити 1–6) без порожніх комірок, у
+        кожній — значення A і B; запити на схвалення дослівно; що агент
+        зробив у прогоні A на запитах 5–6 (запис неможливий — це мірка, не
+        провал); висновок спирається на транскрипти. Чесне «різниці немає» з
+        поясненням — прийнятне.
 
-    - path: "docs/n8n-integrations.md"
+    - path: "docs/mcp/ab/**"
       instructions: |
-        Реєстр інтеграцій з n8n (у домашці — рекомендований крок, не
-        оцінюється; відсутність файлу — не помилка). Якщо файл є: рядок на
-        кожну подію — event, напрям, шлях n8n (/webhook/…, не /webhook-test/),
-        режим відповіді, власник.
+        Транскрипти прогонів A/B (обов'язкові a-generic.md і b-domain.md).
+        Не рев'юй як код; переконайся, що вони відповідають таблиці в
+        docs/mcp/ab-generic-vs-domain.md і не містять секретів.
+
+    - path: "docs/mcp/threat-model.md"
+      instructions: |
+        Task D — за шаблоном docs/templates/threat-model.md. Чотири
+        підзаголовки дослівно:
+        «Які дані бачить агент»,
+        «Канали виносу в цій же сесії»,
+        «Що ми забороняємо і чим саме»,
+        «Що пишемо в договір».
+        Рядок на кожен підключений сервер (supabase, vercel, figma або
+        playwright, leaddesk). Щонайменше три канали виносу з конфіга
+        учасника, хоча б один не браузерний (наприклад deploy_to_vercel з
+        target preview, upload_assets, WebFetch, Bash). Для кожної заборони —
+        механізм і чого він не закриває (read_only=true не прибирає
+        execute_sql; deny не закриває use_vercel_cli → Bash;
+        --allowed-origins не межа безпеки; .mcp.json у claude -p без апруву).
+        Записане правило «клієнтський проєкт до агента напряму не
+        підключаємо; окремий акаунт без клієнтських організацій». Загальні
+        міркування без прив'язки до власного конфіга — ⚠️.
+
+    - path: "docs/**"
+      instructions: |
+        Інші документи. docs/walkthrough.md і docs/templates/ — матеріали
+        курсу, учасник їх не змінює (зміни — назви це). Результати
+        list_teams, list_projects, list_organizations і назви клієнтів у
+        будь-якому документі — ❌; назви самих інструментів згадувати можна.
+
+    - path: ".cursor/**"
+      instructions: |
+        Бонус E3 — .cursor/mcp.json: корінь mcpServers, змінні лише
+        ${env:NAME}, жодного секрету значенням; ті самі обмеження, що в
+        .mcp.json (точні версії, без @latest).
+
+    - path: "tests/**"
+      instructions: |
+        Spec-файли Playwright (*.spec.ts) у дереві — ❌: @playwright/test у
+        проєкті немає, кореневий tsconfig.json підхоплює **/*.ts, і next
+        build падає з TS2307. Тест зберігають як
+        docs/mcp/evidence/lead-form.spec.txt.
 
     - path: "app/**"
       instructions: |
-        Код застосунку: виправлення Task A (щонайменше два) і фіча «запит на
-        кошторис», перенесена з прогону B (Task D).
-        Статичне рев'ю — do NOT run the build or the app. Кожне виправлення
-        Task A має відповідати правилу Vercel, названому в коміті
-        (`fix(<rule-id>)`), і документації Next.js 16: перевір, що зміна
-        справді реалізує це правило і що порада не шкодить у Next.js 16.3.5;
-        виправлення без id правила — ⚠️. Відомі пастки: `next/dynamic` з
-        `ssr: false` у Server Component ламає збірку (лише в Client
-        Components); барел-імпорти lucide-react НЕ є проблемою (Next.js
-        оптимізує їх сам). Для коду n8n звір із контрактом
-        materials/n8n-webhooks-brief.md: виклики n8n лише з серверного модуля
-        з `import "server-only"`; заголовки x-n8n-token, idempotency-key,
-        x-correlation-id; `signal: AbortSignal.timeout(...)`; повтори лише для
-        мережевих помилок, 5xx і 524 з тим самим ключем; довгий воркфлоу —
-        202 + колбек, Server Action не чекає n8n; колбек-роут читає сире тіло
-        (`request.text()`), перевіряє час (±300 с) і підпис (перевірка довжини
-        + timingSafeEqual, не ===) ДО JSON.parse, «застовплює»
-        idempotency-key і звіряє його з jobId та подією з підписаного тіла,
-        зберігає стан до відповіді 202; жодного
-        `runtime = "edge"`, `NEXT_PUBLIC_N8N_*`, тестових URL; у журналах
-        немає тіл, email, телефонів, токенів і підписів.
+        Застосунок у WS5 не змінюється. Єдина очікувана зміна — необов'язковий
+        роут app/api/mcp/** (режим сервера з LEADDESK_BASE_URL, не
+        оцінюється): токен лише серверний (без NEXT_PUBLIC_), перевірка токена
+        до будь-якої дії, віддає лише ті поля й дії, що й інструменти Task A.
+        Інші зміни в app/ — поза завданням: назви їх, ⚠️. Статичне рев'ю — do
+        NOT run the build.
 
     - path: "lib/**"
       instructions: |
-        Код застосунку: виправлення Task A (щонайменше два) і фіча «запит на
-        кошторис», перенесена з прогону B (Task D).
-        Статичне рев'ю — do NOT run the build or the app. Кожне виправлення
-        Task A має відповідати правилу Vercel, названому в коміті
-        (`fix(<rule-id>)`), і документації Next.js 16: перевір, що зміна
-        справді реалізує це правило і що порада не шкодить у Next.js 16.3.5;
-        виправлення без id правила — ⚠️. Відомі пастки: `next/dynamic` з
-        `ssr: false` у Server Component ламає збірку (лише в Client
-        Components); барел-імпорти lucide-react НЕ є проблемою (Next.js
-        оптимізує їх сам). Для коду n8n звір із контрактом
-        materials/n8n-webhooks-brief.md: виклики n8n лише з серверного модуля
-        з `import "server-only"`; заголовки x-n8n-token, idempotency-key,
-        x-correlation-id; `signal: AbortSignal.timeout(...)`; повтори лише для
-        мережевих помилок, 5xx і 524 з тим самим ключем; довгий воркфлоу —
-        202 + колбек, Server Action не чекає n8n; колбек-роут читає сире тіло
-        (`request.text()`), перевіряє час (±300 с) і підпис (перевірка довжини
-        + timingSafeEqual, не ===) ДО JSON.parse, «застовплює»
-        idempotency-key і звіряє його з jobId та подією з підписаного тіла,
-        зберігає стан до відповіді 202; жодного
-        `runtime = "edge"`, `NEXT_PUBLIC_N8N_*`, тестових URL; у журналах
-        немає тіл, email, телефонів, токенів і підписів.
+        lib/ у WS5 не змінюється (словник для сервера — LEAD_STATUSES,
+        AuditEntry, формат lead_0001 — береться звідси, а не переписується).
+        Зміни — поза завданням: назви їх, ⚠️.
 
     - path: "components/**"
       instructions: |
-        Код застосунку: виправлення Task A (щонайменше два) і фіча «запит на
-        кошторис», перенесена з прогону B (Task D).
-        Статичне рев'ю — do NOT run the build or the app. Кожне виправлення
-        Task A має відповідати правилу Vercel, названому в коміті
-        (`fix(<rule-id>)`), і документації Next.js 16: перевір, що зміна
-        справді реалізує це правило і що порада не шкодить у Next.js 16.3.5;
-        виправлення без id правила — ⚠️. Відомі пастки: `next/dynamic` з
-        `ssr: false` у Server Component ламає збірку (лише в Client
-        Components); барел-імпорти lucide-react НЕ є проблемою (Next.js
-        оптимізує їх сам). Для коду n8n звір із контрактом
-        materials/n8n-webhooks-brief.md: виклики n8n лише з серверного модуля
-        з `import "server-only"`; заголовки x-n8n-token, idempotency-key,
-        x-correlation-id; `signal: AbortSignal.timeout(...)`; повтори лише для
-        мережевих помилок, 5xx і 524 з тим самим ключем; довгий воркфлоу —
-        202 + колбек, Server Action не чекає n8n; колбек-роут читає сире тіло
-        (`request.text()`), перевіряє час (±300 с) і підпис (перевірка довжини
-        + timingSafeEqual, не ===) ДО JSON.parse, «застовплює»
-        idempotency-key і звіряє його з jobId та подією з підписаного тіла,
-        зберігає стан до відповіді 202; жодного
-        `runtime = "edge"`, `NEXT_PUBLIC_N8N_*`, тестових URL; у журналах
-        немає тіл, email, телефонів, токенів і підписів.
-
-    - path: "proxy.ts"
-      instructions: |
-        proxy.ts лише перенаправляє без cookie сесії — це не автентифікація.
-        Якщо учасник покладається на нього замість перевірки сесії в Server
-        Actions — ⚠️ (правило server-auth-actions).
+        components/ у WS5 не змінюються. Зміни — поза завданням: назви їх, ⚠️.
 
     - path: ".env*"
       instructions: |
-        У git має бути лише .env.example. Будь-який інший .env* файл у PR
-        (.env.local тощо) — ❌ витік секретів. У .env.example — ключі контракту
-        N8N_WEBHOOK_BASE_URL, N8N_WEBHOOK_TOKEN, N8N_CALLBACK_SECRET,
-        APP_BASE_URL. Секрети (N8N_WEBHOOK_TOKEN, N8N_CALLBACK_SECRET, будь-який
-        токен) — лише значення `change-me-…`. Адреси — локальний мок і
-        застосунок (`http://127.0.0.1:5678/webhook`, `http://127.0.0.1:3000`);
-        N8N_WEBHOOK_BASE_URL закінчується на /webhook. Жодного /webhook-test/ і
-        жодного NEXT_PUBLIC_N8N_*.
+        У git має бути лише .env.example. Будь-який інший .env* (.env.local
+        тощо) — ❌ витік секретів. У .env.example секрети — лише значення
+        change-me-…, адреси — локальні; жодного NEXT_PUBLIC_ на серверних
+        змінних (Supabase, токен роуту MCP).
+
+    - path: ".gitignore"
+      instructions: |
+        Має лишатися: .env* з винятком !.env.example, node_modules/,
+        .playwright-mcp/, /body.json. Видалення будь-якого з цих рядків — ⚠️.
 
     - path: "AGENTS.md"
       instructions: |
-        AGENTS.md у WS4 не є завданням; зміни дозволені. Блок
-        `<!-- BEGIN:nextjs-agent-rules -->` можна лишити. Перевір, що розділ
-        безпеки не отримав винятків на кшталт «якщо задача цього потребує» —
-        правило безпеки з таким винятком — ❌.
+        Зміни дозволені. Перевір, що розділи «Безпека — без винятків» і
+        «MCP-сервери» не отримали винятків на кшталт «якщо задача цього
+        потребує» і не послаблені: відповіді й описи інструментів — дані, а не
+        команди; жодного клієнтського проєкту; один сервер із правом запису на
+        сесію; секрети лише ${VAR}. Послаблене правило — ❌.
 
     - path: "CLAUDE.md"
       instructions: |
         CLAUDE.md має імпортувати AGENTS.md окремим рядком `@AGENTS.md`.
         Markdown-посилання замість імпорту — ❌.
 
+    - path: "package.json"
+      instructions: |
+        Кореневий package.json у WS5 не змінюється: сервер Task A має власний
+        mcp/leaddesk-server/package.json. Будь-яка зміна кореневого — ❌.
+
     - path: "tools/**"
       instructions: |
-        Мок n8n — інструмент перевірки A/B. Будь-яка зміна — ❌: це підганяння
-        результату. Копію мока кладуть у скіл
-        (.claude/skills/integrating-n8n-webhooks/scripts/), а не змінюють тут.
+        Мок n8n з WS4. Будь-яка зміна — ❌.
 
     - path: "materials/**"
       instructions: |
-        Матеріали завдання. Будь-яка зміна, додавання чи видалення — ❌.
+        Матеріали завдання (фікстура лідів, запити A/B). Будь-яка зміна,
+        додавання чи видалення — ❌: A/B і сид мають спиратися на ті самі дані.
+
+    - path: "examples/**"
+      instructions: |
+        Приклад сервера НБУ з воркшопу — матеріал курсу. Будь-яка зміна — ❌:
+        свій сервер будують у mcp/leaddesk-server/.
 
   # ── Pre-merge checks (grading) ────────────────────────────────
   pre_merge_checks:
@@ -341,7 +364,7 @@ reviews:
     title:
       mode: "warning"
       requirements: >
-        PR title should follow: "WS4: <participant full name>".
+        PR title should follow: "WS5: <participant full name>".
 
     # The built-in description check takes only `mode` (it checks the PR
     # template is followed); the name/checklist requirement is a custom check.
@@ -362,140 +385,154 @@ reviews:
           filled in rather than left as unchecked template boxes. PASS if both
           hold; FAIL otherwise.
 
+      - mode: "warning"
+        name: "Task A — own MCP server LeadDesk"
+        instructions: >
+          Static review of the diff only — do NOT run npm, Node or the
+          Inspector. Check mcp/leaddesk-server/ has its own package.json
+          ("type": "module") whose dependencies are @modelcontextprotocol/server
+          and zod pinned to exact x.y.z versions (no ^, ~, * or latest), with
+          @modelcontextprotocol/node allowed only as an exact version for bonus
+          E1 and no @modelcontextprotocol/sdk; a package-lock.json; a README.md;
+          fixtures/leads.json identical to materials/leads.json; and src/ with
+          .mjs modules only (no .ts), using serveStdio, with no console.log.
+          The server registers exactly two tools and one resource:
+          leaddesk_find_leads (readOnlyHint true; status enum of new, contacted,
+          qualified, won, lost, any; limit an integer 1–50; returns only id,
+          company, status, source, budget, createdAt), leaddesk_set_lead_status
+          (readOnlyHint false; leadId matching ^lead_\d{4}$; status enum of the
+          five LEAD_STATUSES from lib/types.ts; reason 3–500 chars; isError true
+          for an unknown lead and for the same status; on success an audit entry
+          with at least action, leadId and at returned in structuredContent;
+          never writes the fixture file) and the resource
+          leaddesk://reference/statuses with mimeType text/markdown. Every
+          inputSchema field has .describe(. Check the committed Inspector output:
+          docs/mcp/tools-list.json lists exactly those two tools with non-empty
+          descriptions, a description on every property and the readOnlyHint
+          annotations; docs/mcp/set-status.json shows the new status and the
+          audit entry; docs/mcp/bad-input.json contains "isError": true;
+          docs/mcp/resource-read.json contains leaddesk://reference/statuses and
+          mimeType. docs/mcp/verification.md has a Task A section. The optional
+          app route (app/api/mcp/**) is NOT graded. PASS if all hold; FAIL if
+          the server or any of the four JSON files is missing, the sdk package
+          or an unpinned version is used, statuses or the id format are
+          invented, or the audit entry is absent.
 
       - mode: "warning"
-        name: "Task A — Vercel skill: review, pin, fixes"
+        name: "Task B — ready servers, least privilege"
         instructions: >
-          Static review of the diff only — do NOT attempt to execute anything.
-          Check that (1) docs/skill-review.md reviews the vercel-react-best-practices
-          skill with the checklist from docs/templates/skill-review.md, filled with
-          the participant's own findings: preview without installing; scripts,
-          allowed-tools, render-time commands, hooks, network instructions, links
-          and hidden instructions; audits; licence and provenance; advice checked
-          against the Next.js 16 docs; the pinned install command; a verdict.
-          (2) .claude/skills/vercel-react-best-practices/SKILL.md is added as a
-          real file with `name: vercel-react-best-practices` (not a symlink text
-          file), and skills-lock.json pins source vercel-labs/agent-skills to an
-          immutable ref — a release tag or a full commit SHA, not a branch. The
-          vendored rules/ files and AGENTS.md are excluded from review on purpose;
-          do not report them as missing. (3) docs/verification.md lists at least
-          two fixes (two are enough; more is not an error), each with a Vercel
-          rule id and the commit, and for ONE of them before/after numbers plus
-          how they were measured (the others only need the rule id and a short
-          explanation of what changed and why); the
-          matching code changes under app/, components/ or lib/ implement those
-          rules correctly for Next.js 16. PASS if all three hold; FAIL if the
-          review is missing or left as a template, the install is unpinned or a
-          link, there are fewer than two fixes with rule ids, or none of them
-          carries before/after numbers.
+          Static review of the diff only. Check .mcp.json has supabase, vercel
+          and either figma or playwright; every entry with a url has "type";
+          the Supabase url contains project_ref= and features= and its features
+          include none of account, functions, branching; no @latest anywhere;
+          no plaintext secret (Bearer plus a token, sbp_, sk-, ghp_, figd_),
+          secrets only as ${VAR}. A playwright entry runs npx directly or via
+          cmd /c, pins @playwright/mcp to an exact x.y.z version, passes
+          --isolated and --no-webmcp and none of --extension, --cdp-endpoint,
+          --user-data-dir. Check .claude/settings.json: deny lists all 11
+          state-changing Vercel tools (mcp__vercel__buy_pro, buy_credits,
+          buy_addon, buy_domain, deploy_to_vercel, get_access_to_vercel_url,
+          import-claude-design-from-url, reply_to_toolbar_thread,
+          edit_toolbar_message, change_toolbar_thread_resolve_status,
+          add_toolbar_reaction); for Figma also use_figma, create_new_file,
+          upload_assets, generate_diagram; for Playwright also
+          browser_run_code_unsafe, webmcp_*, browser_file_upload, browser_drop
+          (browser_evaluate is recommended, not required); no allow rule that
+          starts with mcp__ contains * (mcp__* or mcp__playwright__* is a FAIL);
+          no execute_sql or apply_migration in allow; "deny": ["mcp__*"] is not
+          accepted as the solution; every mcp__<name>__ prefix matches a key in
+          .mcp.json or leaddesk. Check supabase/migrations/0001_leaddesk.sql
+          creates the leads table with the five statuses and
+          supabase/seed/leads.sql inserts exactly the 20 leads lead_0001 to
+          lead_0020; docs/mcp/evidence/ has a non-empty vercel-build-log.txt,
+          figma-tokens.json (valid JSON) or playwright-form-check.md, and
+          mcp-before.txt and mcp-after.txt where after lists fewer tools and
+          none of the denied write tools (for Playwright, before contains
+          browser_run_code_unsafe); docs/mcp/connections.md has one row per
+          server with five filled columns (access, why, what happens if
+          compromised, how narrowed), the Vercel CLI state and the sessions
+          table. PASS if all hold; FAIL otherwise.
 
       - mode: "warning"
-        name: "Task B — building-client-form skill"
+        name: "Task C — A/B generic vs domain"
         instructions: >
-          Static review of the diff only. Check .claude/skills/building-client-form/SKILL.md
-          exists with `name: building-client-form` (equal to the folder) and a
-          description under 1024 characters that states what the skill does AND
-          when to use it, with Ukrainian trigger phrases. The body must be a
-          concrete form pattern: a Server Action that checks the session and
-          permissions and validates inside the action, useActionState, accessible
-          field errors (label, aria-invalid, aria-describedby, role="alert"),
-          values kept after an error, a small `{ status, … }` return value, no
-          personal data in logs, slow side effects in after(). It must reference
-          Vercel rules by id instead of copying them and end with a Verify
-          section. Check docs/verification.md records a plain request made in a
-          fresh session without naming the skill, whether the skill triggered
-          and how that was observed, and the result. PASS if both hold; FAIL
-          otherwise.
+          Static review of the diff only. Polarity: run A uses ONLY the Supabase
+          server with project_ref, read_only=true and features=database,docs;
+          run B uses ONLY the participant's LeadDesk server from Task A. Check
+          docs/mcp/ab-generic-vs-domain.md follows
+          docs/templates/ab-generic-vs-domain.md: the six prompts of
+          materials/ab-prompts.md unchanged (the recorded sha256 equals
+          3b4c90c48f32fd358bd696eb5aaf386e51f038794c0b8d8a57ff88675718058a);
+          each run in a new session in its own empty folder outside the
+          repository; /mcp at the start showing exactly one server; the same
+          model and effort; the add commands of both runs; a comparison table
+          with exactly six rows (prompts 1–6) and no empty cells, each cell
+          giving both A and B; the approval prompts quoted verbatim; what run A
+          did on prompts 5–6, where writing is impossible (that is a measure,
+          not a failure); a conclusion grounded in the transcripts
+          docs/mcp/ab/a-generic.md and docs/mcp/ab/b-domain.md, which must both
+          exist. An honest "no difference" conclusion with an explanation is
+          acceptable. PASS if all hold; FAIL otherwise.
 
       - mode: "warning"
-        name: "Task C — integrating-n8n-webhooks skill"
+        name: "Task D — threat model"
         instructions: >
-          Static review of the diff only — do NOT run the scripts. Check
-          .claude/skills/integrating-n8n-webhooks/ has: SKILL.md with `name`
-          equal to the folder and a what-plus-when description; a concise
-          contract, a checklist, stop rules without task-dependent exceptions,
-          and a verification section; details in references/*.md linked directly
-          from SKILL.md rather than a verbatim copy of
-          materials/n8n-webhooks-brief.md; scripts/check-contract.mjs using only
-          Node built-ins, with at least five checks, each printing an id and
-          PASS/FAIL, file:line for each FAIL, a non-zero exit code on any
-          failure, a --root option and --help.
-          The contract in the skill must match the brief (server-only N8N_* env
-          vars; x-n8n-token, idempotency-key and x-correlation-id headers; the
-          callback signature sha256=HMAC-SHA256(secret, "<timestamp>.<raw body>")
-          verified on the raw body with a length check and timingSafeEqual, a
-          300 s window and idempotency; async 202 + callback for long workflows;
-          no /webhook-test/ URLs). Task C is the skill only: the «запит на
-          кошторис» feature is NOT part of it — do not ask for the feature, for a
-          request that triggered the skill or for a mock log here (that is Task D,
-          docs/ab-validation.md). Check docs/verification.md records the
-          check-contract.mjs output on main (with failures) and the output on the
-          final code (0 FAIL). PASS if the skill, the checker and this evidence
-          are present and consistent; FAIL otherwise.
-
-      - mode: "warning"
-        name: "Task D — A/B validation and quote feature"
-        instructions: >
-          Static review of the diff only. Polarity: run A is WITHOUT the
-          integrating-n8n-webhooks skill, run B is WITH it. Check
-          docs/ab-validation.md documents both runs of the unchanged prompt from
-          materials/ab-task.md, each in a fresh session with the same model and
-          effort; the run-A copy had no project skills at all and the run-B copy
-          only integrating-n8n-webhooks (renaming the skill or leaving a personal
-          copy in ~/.claude/skills does not count); tools/, materials/, docs/,
-          README.md, .coderabbit.yaml and .github/ were removed from both copies
-          (they describe the n8n contract; the mock was run from the working
-          repository); the same reply to any clarifying question. For each run it
-          must record the skills visible at the start, whether run B invoked the
-          skill, the check-contract.mjs output for the run's own code (ids and
-          PASS/FAIL, via --changed-since base or with the baseline's pre-existing
-          FAILs marked as such), the mock log of the form → callback → /quotes/[id] scenario
-          (URL, auth=, idempotency=, callback status), the form response time,
-          whether the server log contains request bodies or personal data, and
-          the changed files, followed by a comparison table and a conclusion
-          grounded in those observations. Both diffs are required:
-          docs/ab/a-without-skill.diff and docs/ab/b-with-skill.diff. An honest "no difference" conclusion that explains where the
-          agent learned the contract (for example general knowledge, the Next.js
-          docs or existing code) is acceptable. docs/n8n-integrations.md is a
-          recommended step, not graded: do not fail this check without it. The feature is built in these runs, not in the branch:
-          check that the «запит на кошторис» feature (a /quotes/new page, a
-          Server Action, a callback Route Handler and a /quotes/[id] status page)
-          is present under app/, components/ and lib/ and follows the contract of
-          materials/n8n-webhooks-brief.md, and that docs/ab-validation.md says
-          how the run-B result was carried into the branch (diff, merge or
-          copied files), what had to be finished by hand, the check-contract.mjs
-          output on the final code (0 FAIL) and that the form → callback →
-          /quotes/[id] scenario was re-run on the branch. PASS if both runs and
-          the carried-over feature are documented this way; FAIL otherwise.
+          Static review of the diff only. Check docs/mcp/threat-model.md has the
+          four headings verbatim: «Які дані бачить агент»,
+          «Канали виносу в цій же сесії», «Що ми забороняємо і чим саме»,
+          «Що пишемо в договір»; a
+          row for every server the participant connected (supabase, vercel,
+          figma or playwright, leaddesk); at least three exfiltration channels
+          taken from the participant's own configuration, at least one of them
+          not a browser tool (for example deploy_to_vercel with target preview,
+          upload_assets, WebFetch, Bash); for every prohibition the mechanism
+          and what it does NOT close; and the rule that a client project is
+          never connected to the agent directly and work happens from a
+          separate account without client organisations. PASS if all hold;
+          FAIL if a heading is missing or renamed, fewer than three channels are
+          named, or the analysis is generic rather than tied to the committed
+          .mcp.json and .claude/settings.json.
 
       - mode: "warning"
         name: "Task E — bonus (one of three)"
         instructions: >
           Optional bonus — absence is NOT a failure. If present, check one of:
-          (E1) docs/skill-review-n8n.md reviews czlonkowski/n8n-skills or
-          n8n-io/skills WITHOUT installing it, following
-          docs/templates/skill-review.md, with the reviewed commit SHA, findings
-          on hooks, MCP servers and API keys, and at least one claim of the pack
-          checked against materials/n8n-webhooks-brief.md; (E2)
-          docs/trigger-evals.md has at least ten prompts for an own skill, split
-          into should-trigger and should-not-trigger, each run in a fresh
-          session, with results and any description change; (E3) a "Cursor"
-          section in docs/verification.md records which skills Cursor saw and
-          whether they triggered on the Task B request and on the prompt from
-          materials/ab-task.md. PASS if one option is complete.
+          (E1) mcp/leaddesk-server/src/http.mjs reuses the stdio server's
+          factory with createMcpHandler and toNodeHandler from
+          @modelcontextprotocol/node (exact version in package.json), CALLS the
+          localhostHostValidation() and localhostOriginValidation() guards in
+          the request handler before the MCP handler (passing them as an option
+          is silently ignored and does not count), listens on 127.0.0.1, and
+          the "Task E" section of docs/mcp/verification.md records four curl
+          responses: 200 with the tools, 403 for a forged Host, 403 for a
+          forged Origin, 400 with -32020 without MCP-Protocol-Version; body.json
+          is not committed. (E2) mcp/poisoned-demo/ with exact versions and two
+          tools whose poisoned description points only at a decoy file with
+          change-me-… values, never a real .env file, and verification notes
+          with the raw tools/list next to what /mcp showed, whether the agent
+          tried to read the decoy and what stopped it, and a conclusion on what
+          the human sees versus the model. (E3) .cursor/mcp.json with
+          mcpServers, ${env:NAME} variables and no secrets, and notes with the
+          Cursor version, visible tools, how Cursor asks for permission and how
+          it differed from Claude Code. PASS if one option is complete.
 
       - mode: "warning"
-        name: "Protected paths and secrets"
+        name: "Protected paths, secrets and hygiene"
         instructions: >
           Static review of the diff only. FAIL if the PR modifies, adds or
-          deletes any file under tools/ or materials/, changes .coderabbit.yaml
-          or anything under .github/, commits any .env* file other than
-          .env.example, gives a secret key in .env.example (N8N_WEBHOOK_TOKEN,
-          N8N_CALLBACK_SECRET or any other token or secret) a value other than a
-          change-me-… placeholder, or puts a /webhook-test/ URL there. Local
-          URLs such as http://127.0.0.1:5678/webhook and http://127.0.0.1:3000
-          are expected. PASS otherwise. New skills, docs, app fixes and the
-          quote feature elsewhere are expected and fine.
+          deletes any file under tools/, materials/, examples/ or .github/,
+          changes .coderabbit.yaml, or changes the root package.json or
+          package-lock.json; commits any .env* file other than .env.example, or
+          gives a secret in .env.example a value other than change-me-…;
+          contains a plaintext secret anywhere (Bearer followed by a token,
+          sbp_, sk-, ghp_, figd_); commits anything under .playwright-mcp/ or
+          node_modules/, a body.json, or any *.spec.ts file (without
+          @playwright/test it breaks next build); has list_teams, list_projects
+          or list_organizations anywhere under docs/mcp/evidence/, or the output
+          of those tools (team, organisation or project listings) in any file.
+          Mentioning those tool names in the threat model or connections.md is
+          fine. PASS otherwise. The own server under mcp/, .mcp.json,
+          .claude/settings.json, supabase/ and docs/mcp/ are expected and fine.
 
 chat:
   auto_reply: true

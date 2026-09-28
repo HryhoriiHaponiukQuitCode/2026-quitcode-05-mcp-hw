@@ -1,4 +1,4 @@
-<!-- Заголовок PR: WS4: <Ім'я Прізвище> -->
+<!-- Заголовок PR: WS5: <Ім'я Прізвище> -->
 
 ## Учасник
 
@@ -8,27 +8,31 @@
      GitHub-логін не завжди дозволяє вас ідентифікувати, а сертифікат
      виписується на реальне ім'я. -->
 
-**Основний інструмент:** <!-- Claude Code чи Cursor, версія, модель -->
+**Основний інструмент:** <!-- Claude Code (версія, модель) -->
+
+**Третій сервер у Task B:** <!-- Figma чи Playwright -->
 
 ## Що зроблено (Definition of Done)
 
-- [ ] **Task A:** `docs/skill-review.md` — рев'ю до встановлення; `vercel-react-best-practices` встановлено з закріпленим тегом і `--copy`, 75 файлів і `skills-lock.json` у git; **щонайменше 2 виправлення** (досить двох) — окремі коміти з id правила, для одного з них числа до/після в `docs/verification.md`
-- [ ] **Task B:** `.claude/skills/building-client-form/SKILL.md`; спрацювання на звичайний запит у свіжій сесії — у `docs/verification.md`
-- [ ] **Task C:** `.claude/skills/integrating-n8n-webhooks/` — `SKILL.md` з правилами зупинки, `references/`, `scripts/check-contract.mjs` (≥ 5 перевірок з id, для FAIL — файл:рядок, `--root <тека>`, `--help`); вивід на коді `main` — у `docs/verification.md`
-- [ ] **Task D:** `docs/ab-validation.md` з обома прогонами (A — без жодного скіла, B — лише з `integrating-n8n-webhooks`; у копіях немає `tools/`, `materials/`, `docs/`, `README.md`, `.coderabbit.yaml`, `.github/`); `check-contract.mjs` для кожного прогону — на коді прогону (`--changed-since base` або з позначеними старими FAIL); діфи в `docs/ab/`; **фіча «запит на кошторис» у гілці — це перенесений результат прогону B** (`/quotes/new`, Server Action, колбек-роут, `/quotes/[id]`), працює з моком, `check-contract.mjs` — 0 FAIL
-- [ ] **Task E (bonus):** <!-- E1 рев'ю n8n-скілів / E2 тест спрацювання / E3 Cursor — або приберіть пункт -->
-- [ ] У трьох скілів `name` = назва теки, є `description`
-- [ ] `npm run build` і `npm run lint` без помилок; `check-contract.mjs` на фінальному коді — 0 FAIL
-- [ ] Жодних секретів у git (лише `.env.example`: секрети — `change-me-…`, адреси — локальні, без `/webhook-test/`); `tools/**`, `materials/**`, `.coderabbit.yaml` і `.github/**` не змінені
-
-## Яке правило Vercel дало найбільший ефект
-
-<!-- правило, число до → після, як міряли -->
+- [ ] **Task A:** `mcp/leaddesk-server/` — окремий `package.json` з точними версіями `@modelcontextprotocol/server` і `zod` (без `@modelcontextprotocol/sdk`), `package-lock.json`, `README.md`, `fixtures/leads.json` = `materials/leads.json`, `src/server.mjs` на `serveStdio` без `console.log`; `leaddesk_find_leads`, `leaddesk_set_lead_status` (запис аудиту), ресурс `leaddesk://reference/statuses`; у `docs/mcp/` — `tools-list.json`, `set-status.json`, `bad-input.json` (`"isError": true`), `resource-read.json`
+- [ ] **Task B:** `.mcp.json` (Supabase з `project_ref=` і `features=`, Vercel, Figma або Playwright; жодного `@latest` і секрету) і `.claude/settings.json` (11 інструментів Vercel і записуючі інструменти третього сервера в `deny`; в `allow` лише точні імена); `supabase/migrations/0001_leaddesk.sql` і `supabase/seed/leads.sql` на 20 лідів; `docs/mcp/connections.md`; у `docs/mcp/evidence/` — `vercel-build-log.txt`, `figma-tokens.json` або `playwright-form-check.md`, `mcp-before.txt`, `mcp-after.txt`
+- [ ] **Task C:** `docs/mcp/ab-generic-vs-domain.md` — ті самі шість запитів (sha256 збігається), дві нові сесії в порожніх теках поза репозиторієм, у `/mcp` рівно один сервер; таблиця на 6 рядків без порожніх комірок; транскрипти `docs/mcp/ab/a-generic.md` і `docs/mcp/ab/b-domain.md`
+- [ ] **Task D:** `docs/mcp/threat-model.md` — чотири обов'язкові підзаголовки, рядок на кожен сервер, щонайменше три канали виносу (хоча б один не браузерний), правило про клієнтський проєкт
+- [ ] **Task E (bonus):** <!-- E1 HTTP-сервер / E2 отруєний опис / E3 Cursor — або приберіть пункт -->
+- [ ] `docs/mcp/verification.md` — розділи Task A і Task B (і Task E, якщо робили)
+- [ ] `npm run build` і `npm run lint` без помилок; кореневі `package.json` і `package-lock.json` не змінені
+- [ ] Лише особисті або одноразові акаунти; жодного виводу `list_teams` / `list_projects` / `list_organizations` і назв клієнтів у репозиторії
+- [ ] Жодних секретів у git (лише `.env.example`); `.playwright-mcp/` і `body.json` не закомічено; `tools/**`, `materials/**`, `examples/**`, `.coderabbit.yaml` і `.github/**` не змінені
 
 ## Що показала A/B-перевірка
 
-<!-- коротко: A (без скіла) → B (зі скілом), або чесне «різниці немає» і чому;
-     і що довелось доробити руками після перенесення прогону B -->
+<!-- коротко: A (Supabase, профіль «client») → B (ваш сервер): виклики, схема БД, запити на схвалення,
+     правильність відповідей; що агент зробив у прогоні A на запитах 5–6; або чесне «різниці немає» і чому -->
+
+## Threat model коротко
+
+<!-- 2–4 рядки: найнебезпечніший канал виносу у вашому конфігу, чим його закрито і чого цей механізм
+     не закриває; що з цього піде в договір -->
 
 ---
 CodeRabbit зробить рев'ю. Якщо воно не з'явилося за кілька хвилин — додайте коментар `@coderabbitai review`.
