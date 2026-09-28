@@ -97,7 +97,9 @@ npm run dev                      # http://localhost:3000
 
 Знадобиться в кожному завданні.
 
-- **Команда:** `claude mcp add [--scope local|user|project] [--transport stdio|http] [-e KEY=value] <name> <команда або URL>`.
+- **Команда:** `claude mcp add [--scope local|user|project] --transport http <name> <URL>` або
+  `claude mcp add [--scope local|user|project] <name> [-e KEY=value] -- <команда>`. `-e` — лише після
+  `<name>`: він приймає кілька значень і інакше забирає ім'я сервера як ще одну змінну.
   Усе після `--` передається серверу без змін: без `--` Claude Code розбере прапорці сервера як свої.
 - **Скоуп за замовчуванням — `local`:** лише ви й лише цей проєкт (запис у `~/.claude.json`, у git
   нічого). `--scope project` пише `.mcp.json` у репозиторій: в інтерактивній сесії Claude Code питає
@@ -105,7 +107,7 @@ npm run dev                      # http://localhost:3000
   ваших проєктах, зокрема клієнтських, — у цій домашці не використовуємо.
 - **`/mcp`** — перелік серверів, вхід (Authenticate) і **перемикач**, яким сервер вимикається для
   цього проєкту без видалення конфігурації. Так ви лишаєте в сесії лише потрібні сервери.
-- **Запис із `url`, але без `"type"`**, Claude Code читає як stdio-сервер, і той не запускається.
+- **Запис із `url`, але без `"type"`**, Claude Code пропускає з попередженням (`has a "url" but no "type"`), і сервер не запускається.
 - **Секрети — лише як `${VAR}`.** Claude Code розгортає `${VAR}` і `${VAR:-default}` у `command`,
   `args`, `env`, `url` і `headers`. У цій домашці секретів у `.mcp.json` взагалі немає: Supabase,
   Vercel і Figma входять через OAuth.
@@ -123,6 +125,8 @@ npm run dev                      # http://localhost:3000
 - **Браузерні сервери** додаються командою з `cmd /c npx …`, і її треба запускати з **PowerShell**:
   Git Bash перетворює `/c` на `C:/`. Альтернатива в Git Bash — `MSYS_NO_PATHCONV=1` перед командою.
   Голий `npx` як команда stdio-сервера на Windows падає з `ENOENT`, `cmd /c npx` працює.
+  У PowerShell пишіть роздільник у лапках — `'--'`: якщо Claude Code встановлено через npm,
+  PowerShell 5.1 інакше з'їдає `--`, і команда падає з `unknown option '-y'`.
 - `curl` у PowerShell — це псевдонім `Invoke-WebRequest`; справжній curl там — `curl.exe`.
 - Порт `:3000` зайнятий — зупиніть свій попередній `npm run dev` (Ctrl+C).
 
@@ -347,10 +351,10 @@ claude mcp add --scope project --transport http figma https://mcp.figma.com/mcp
 …**або Playwright** — на Windows з **PowerShell**:
 
 ```powershell
-claude mcp add --scope project playwright -- cmd /c npx -y @playwright/mcp@0.0.82 --isolated --no-webmcp --allowed-origins "http://localhost:3000"
+claude mcp add --scope project playwright '--' cmd /c npx -y @playwright/mcp@0.0.82 --isolated --no-webmcp --allowed-origins "http://localhost:3000"
 ```
 
-На macOS/Linux — та сама команда без `cmd /c`: `… playwright -- npx -y @playwright/mcp@0.0.82 --isolated …`.
+На macOS/Linux — та сама команда без `cmd /c` і без лапок навколо `--`: `… playwright -- npx -y @playwright/mcp@0.0.82 --isolated …`.
 
 Очікуваний вигляд `.mcp.json` (можна й дописати руками):
 
@@ -379,7 +383,10 @@ claude mcp add --scope project playwright -- cmd /c npx -y @playwright/mcp@0.0.8
 Чому саме так:
 
 - **Supabase, профіль «build»: `project_ref` + `features=database,development,docs`.** `project_ref`
-  прибирає 9 account-інструментів (`list_organizations`, `list_projects`, `create_project`…).
+  прив'язує всі інструменти до одного проєкту: з їхніх схем зникає `project_id`, і агент не дістане
+  інших проєктів акаунта. 9 account-інструментів (`list_organizations`, `list_projects`,
+  `create_project`…) тут прибирає вже `features`: групи `account` у переліку немає (без `features`
+  їх прибрав би й сам `project_ref`).
   `development` потрібен, бо дає `get_project_url`, `get_publishable_keys` і
   `generate_typescript_types`, і вся ця група лише читає. `functions` і `branching` вимкнено:
   перше — канал назовні, друге — платне. `read_only=true` тут свідомо **не** ставимо: він прибирає
@@ -397,7 +404,8 @@ claude mcp add --scope project playwright -- cmd /c npx -y @playwright/mcp@0.0.8
 
 ### 2. Перший вхід і правило сесій _(~15 хв)_
 
-1. `claude` у корені репозиторію → схваліть сервери з `.mcp.json`.
+1. `claude` у корені репозиторію → схваліть сервери з `.mcp.json`. Ця сесія — лише для входу:
+   агенту в ній нічого не пишіть, а після входу вийдіть (`/exit`).
 2. `/mcp` → `supabase` → Authenticate. Оберіть організацію **одноразового** проєкту.
    Так само `vercel`, і `figma`, якщо ви її обрали. Playwright входу не потребує.
 3. **Далі в кожній сесії** залишайте в `/mcp` увімкненим лише сервер поточного кроку, решту
@@ -747,7 +755,8 @@ createServer(async (req, res) => {
 
 Головна пастка: гварди треба **викликати самому**. Передати їх опцією в `toNodeHandler` не вийде —
 таку опцію мовчки проігноровано, і сервер відповідає 200 на підроблений `Host`. Докази — чотири
-відповіді `curl` (Git Bash; у PowerShell — `curl.exe`) з файлом тіла запиту:
+відповіді `curl` з файлом тіла запиту. Це bash: на Windows — лише Git Bash (масив `H=(…)` і
+`@body.json` PowerShell не розбере навіть із `curl.exe`), на macOS/Linux — будь-який термінал:
 
 ```bash
 printf '%s' '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}' > body.json
@@ -791,10 +800,12 @@ curl -s -w '\nHTTP %{http_code}\n' -H "Content-Type: application/json" -H "Accep
 Перед здачею:
 
 ```bash
+git add docs/mcp && git commit -m "docs: A/B report, threat model, verification"   # і файли Task E, якщо робили
+git status --short                                     # порожньо: усе закомічено
 npm run lint
 npm run build
 git ls-files ".env*"                                   # лише .env.example
-git ls-files ".playwright-mcp" "*.spec.ts" body.json  # порожньо
+git ls-files ".playwright-mcp" "*.spec.ts" "*body.json"  # порожньо
 git diff --quiet origin/main -- package.json package-lock.json && echo "root deps untouched"
 grep -rE "list_teams|list_projects|list_organizations" docs/mcp/evidence || echo "evidence clean"
 ```

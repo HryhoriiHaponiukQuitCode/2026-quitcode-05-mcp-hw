@@ -78,7 +78,7 @@ mcp/leaddesk-server/
 
 ## Артефакти перевірки — у `docs/mcp/`
 
-Команди — у walkthrough, Task A, крок 5 (Git Bash, з кореня репозиторію).
+Команди — у walkthrough, Task A, крок 4 (Git Bash, з кореня репозиторію).
 
 | Файл | Що в ньому |
 |---|---|

@@ -72,7 +72,8 @@ reviews:
     - ".coderabbit.yaml"
     - "!**/node_modules/**"
     - "!**/.next/**"
-    - "!**/package-lock.json"
+    - "package-lock.json"
+    - "mcp/leaddesk-server/package-lock.json"
 
   # ── Path-specific review instructions ─────────────────────────
   path_instructions:
@@ -138,7 +139,8 @@ reviews:
         з action, leadId, at; bad-input.json містить "isError": true з текстом
         валідації; resource-read.json містить leaddesk://reference/statuses і
         mimeType. Файл, схожий на вручну написаний JSON замість виводу
-        Inspector'а (немає content/structuredContent), — ⚠️.
+        Inspector'а (корінь не той, що дає Inspector: tools у tools-list.json,
+        contents у resource-read.json, content у set-status.json і bad-input.json), — ⚠️.
 
     - path: ".mcp.json"
       instructions: |
@@ -184,7 +186,9 @@ reviews:
       instructions: |
         Скіли WS4 у .claude/skills/ у WS5 не змінюються; зміни в них поза
         завданням — назви це. settings.local.json у git — ⚠️ (особисті
-        налаштування). Хуки чи allow, що дозволяють мережу або читання .env*
+        налаштування). Точні імена MCP-інструментів в allow, які дає
+        walkthrough (зокрема browser_navigate), — нормально. Інші хуки чи allow,
+        що дозволяють мережу або читання .env*
         без підтвердження людини, — ⚠️.
 
     - path: "supabase/**"
@@ -322,7 +326,7 @@ reviews:
     - path: ".gitignore"
       instructions: |
         Має лишатися: .env* з винятком !.env.example, node_modules/,
-        .playwright-mcp/, /body.json. Видалення будь-якого з цих рядків — ⚠️.
+        .playwright-mcp/, body.json. Видалення будь-якого з цих рядків — ⚠️.
 
     - path: "AGENTS.md"
       instructions: |
@@ -424,7 +428,8 @@ reviews:
           Static review of the diff only. Check .mcp.json has supabase, vercel
           and either figma or playwright; every entry with a url has "type";
           the Supabase url contains project_ref= and features= and its features
-          include none of account, functions, branching; no @latest anywhere;
+          include none of account, functions, branching; no @latest in .mcp.json or in any command, args or url (mentioning
+          @latest in prose, e.g. in docs/ or AGENTS.md, is fine);
           no plaintext secret (Bearer plus a token, sbp_, sk-, ghp_, figd_),
           secrets only as ${VAR}. A playwright entry runs npx directly or via
           cmd /c, pins @playwright/mcp to an exact x.y.z version, passes
@@ -451,7 +456,8 @@ reviews:
           browser_run_code_unsafe); docs/mcp/connections.md has one row per
           server with five filled columns (access, why, what happens if
           compromised, how narrowed), the Vercel CLI state and the sessions
-          table. PASS if all hold; FAIL otherwise.
+          table; docs/mcp/verification.md has a Task B section. PASS if all hold;
+          FAIL otherwise.
 
       - mode: "warning"
         name: "Task C — A/B generic vs domain"
@@ -498,7 +504,8 @@ reviews:
         instructions: >
           Optional bonus — absence is NOT a failure. If present, check one of:
           (E1) mcp/leaddesk-server/src/http.mjs reuses the stdio server's
-          factory with createMcpHandler and toNodeHandler from
+          factory with createMcpHandler (from @modelcontextprotocol/server) and
+          toNodeHandler from
           @modelcontextprotocol/node (exact version in package.json), CALLS the
           localhostHostValidation() and localhostOriginValidation() guards in
           the request handler before the MCP handler (passing them as an option
