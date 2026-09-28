@@ -47,3 +47,6 @@ next-env.d.ts
 
 # Playwright MCP: snapshots, screenshots and console/network dumps of every browser action
 .playwright-mcp/
+
+# Task E1: request body for the curl checks of the HTTP server
+/body.json
