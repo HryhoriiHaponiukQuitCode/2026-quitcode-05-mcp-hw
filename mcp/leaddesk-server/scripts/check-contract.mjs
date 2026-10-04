@@ -168,6 +168,10 @@ const CHECKS = [
     return (deps["@modelcontextprotocol/server"] && deps.zod && !deps["@modelcontextprotocol/sdk"] && loose.length === 0 && notMjs.length === 0 && extra.length === 0)
       || `loose=${loose} notMjs=${notMjs} extra=${extra}`;
   }],
+  ["C17", "back to new (lead_0003 contacted → new) → isError: only the app sets new", async (d) => {
+    const { code, json } = await call(d, "leaddesk_set_lead_status", { leadId: "lead_0003", status: "new", reason: "перевірка" });
+    return (code === 5 && json.isError === true) || `code=${code} ${JSON.stringify(json).slice(0, 160)}`;
+  }],
 ];
 
 async function checkAll(dir, { quiet = false } = {}) {
@@ -192,6 +196,7 @@ const MUTANTS = [
   ["M7", "C14", "writes the change back into the fixture", ["audit.push(entry);", 'audit.push(entry); (await import("node:fs")).writeFileSync(FIXTURE, JSON.stringify([...leads.values()], null, 2));']],
   ["M8", "C2", "invented status hot", ['export const LEAD_STATUSES = ["new",', 'export const LEAD_STATUSES = ["hot", "new",']],
   ["M9", "C9", "no audit entry in the result", ["structuredContent: { lead: pick(lead), audit: entry },", "structuredContent: { lead: pick(lead) },"]],
+  ["M10", "C17", "an open lead can be sent back to new", ['if (status === "new") {', "if (false) {"]],
 ];
 
 async function selfTest() {

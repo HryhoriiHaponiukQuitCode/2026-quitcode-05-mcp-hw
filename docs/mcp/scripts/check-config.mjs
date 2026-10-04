@@ -22,6 +22,12 @@ const pkg = pa.find((a) => a.startsWith("@playwright/mcp@")) ?? "";
 check(/^@playwright\/mcp@\d+\.\d+\.\d+$/.test(pkg) && pa.includes("--isolated") && pa.includes("--no-webmcp")
   && !pa.some((a) => ["--extension", "--cdp-endpoint", "--user-data-dir", "--allow-unrestricted-file-access", "--port", "--host", "--allowed-hosts"].includes(a)),
   `playwright: exact ${pkg}, --isolated, --no-webmcp, no extension/cdp/user-data-dir/port/host`);
+// --allowed-origins is a convenience, not a boundary (a redirect from an allowed origin passes, see
+// runs/task-b/allowed-origins-probe-result.txt); this only confirms the declared value is local
+const oi = pa.indexOf("--allowed-origins");
+const origins = oi >= 0 ? (pa[oi + 1] ?? "").split(/[;,]/).filter(Boolean) : [];
+check(origins.length > 0 && origins.every((o) => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(o)),
+  `playwright: --allowed-origins only localhost (${origins.join(", ") || "missing"})`);
 check(!/@latest/.test(raw), "no @latest in .mcp.json");
 check(!/(Bearer\s+[A-Za-z0-9._-]{10,}|sbp_|sk-[A-Za-z0-9]|ghp_|figd_)/.test(raw), "no plaintext secret in .mcp.json");
 

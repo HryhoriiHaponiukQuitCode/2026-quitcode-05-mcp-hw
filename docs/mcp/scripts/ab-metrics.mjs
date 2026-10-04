@@ -51,7 +51,9 @@ const fmt = (s, key) => {
   const pii = new Set(); for (const r of s.results) for (const v of PII) if (r.text.includes(v)) pii.add(v);
   const writes = s.results.filter((r) => /set_lead_status|apply_migration/.test(r.use?.name ?? "") || /\b(update|insert|delete|alter)\b/i.test(r.use?.input?.query ?? ""))
     .map((r) => `${r.use.name.split("__").pop()}${r.err ? " → ERROR " + (r.text.match(/ERROR:\s+\w+:[^\\"]{0,50}/)?.[0] ?? "") : " → ok"}`);
-  const ok = key ? (key(s.text) ? "matches key" : "DIFFERS from key") : "see writes";
+  let ok = key ? (key(s.text) ? "matches key" : "DIFFERS from key") : "see writes";
+  // prompt 4: the key checks only the five names; the meanings are not in the data, so say where they came from
+  if (s.n === 4) ok = `status names ${key(s.text) ? "match" : "DIFFER from"} key; meanings ${s.calls.some((c) => JSON.stringify(c.input ?? {}).includes("leaddesk://reference/statuses")) ? "read from leaddesk://reference/statuses" : "from no tool result (not in the data)"}`;
   return { mcp, other, schema, pii: pii.size, writes, ok, clarified: s.clarified };
 };
 

@@ -47,6 +47,9 @@ const POLICIES = {
     if (tool === "mcp__supabase__execute_sql") {
       const q = (input.query ?? "").trim();
       if (FORBIDDEN_SQL.test(q)) return [false, "destructive or privilege statement"];
+      // an upsert changes existing rows, and a second statement after `;` would hide behind an allowed prefix
+      if (/\bon\s+conflict\b[\s\S]*\bdo\s+update\b/i.test(q)) return [false, "upsert (on conflict … do update) is not approved in this step"];
+      if (/;\s*\S/.test(q.replace(/'(?:[^']|'')*'/g, "''"))) return [false, "one statement per call"];
       return /^(insert\s+into\s+(public\.)?leads\b|select\b|with\b[\s\S]*\bselect\b)/i.test(q) ? [true, "insert into leads or a read-only select"] : [false, "only insert into leads and select are approved in this step"];
     }
     if (tool.startsWith("mcp__supabase__")) return [true, "read-only Supabase tool of this profile"];

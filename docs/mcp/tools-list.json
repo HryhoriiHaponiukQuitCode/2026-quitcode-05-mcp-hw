@@ -58,7 +58,7 @@
               "won",
               "lost"
             ],
-            "description": "Новий статус: new, contacted, qualified, won або lost. Має відрізнятися від поточного"
+            "description": "Новий статус: contacted, qualified, won або lost (new ставить лише застосунок, повернути туди не можна). Має відрізнятися від поточного"
           },
           "reason": {
             "type": "string",

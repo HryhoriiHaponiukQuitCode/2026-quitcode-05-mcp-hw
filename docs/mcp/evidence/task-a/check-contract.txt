@@ -1,4 +1,4 @@
-LeadDesk MCP contract check · server mcp/leaddesk-server · Inspector 2.8.0 · 2026-09-28T11:47:06.933Z
+LeadDesk MCP contract check · server mcp/leaddesk-server · Inspector 2.8.0 · 2026-10-04T11:06:05.935Z
 PASS C1 tools/list: exactly leaddesk_find_leads and leaddesk_set_lead_status, readOnlyHint true/false
 PASS C2 tools/list: every parameter has a description; enums, id pattern and bounds come from the app
 PASS C3 tool descriptions say what the tool does and whether it changes data
@@ -15,4 +15,5 @@ PASS C13 invalid input is rejected: id nope, status hot, reason 2 and 501 chars,
 PASS C14 fixture is an unchanged copy of materials/leads.json, also after the status changes above
 PASS C15 stdout is protocol only: nothing on stdout without a client; no console.log in src/
 PASS C16 package.json: exact versions of @modelcontextprotocol/server and zod, no sdk; src/ has only .mjs
-RESULT: 16/16 PASS
+PASS C17 back to new (lead_0003 contacted → new) → isError: only the app sets new
+RESULT: 17/17 PASS

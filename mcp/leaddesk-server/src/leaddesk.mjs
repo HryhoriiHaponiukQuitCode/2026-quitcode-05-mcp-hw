@@ -69,6 +69,7 @@ export const STATUSES_MARKDOWN = `# Статуси лідів LeadDesk
 - Перед зміною агент показує людині, що саме зміниться («lead_0002: new → contacted, причина …»), і
   чекає підтвердження.
 - \`won\` і \`lost\` — закриті угоди. Агент їх не перевідкриває: це робить людина в дашборді.
+- У \`new\` лід не повертаємо: цей статус ставить лише застосунок, коли приходить заявка.
 - Той самий статус, що вже є, — помилка, а не «успішна» зміна: так видно, що дані розійшлися з очікуванням.
 `;
 
@@ -125,7 +126,7 @@ export function createLeadDeskServer() {
           .describe("Ідентифікатор ліда у форматі lead_0002: lead_ і чотири цифри. Невідомий — знайди через leaddesk_find_leads"),
         status: z
           .enum(LEAD_STATUSES)
-          .describe("Новий статус: new, contacted, qualified, won або lost. Має відрізнятися від поточного"),
+          .describe("Новий статус: contacted, qualified, won або lost (new ставить лише застосунок, повернути туди не можна). Має відрізнятися від поточного"),
         reason: z
           .string()
           .trim()
@@ -145,6 +146,9 @@ export function createLeadDeskServer() {
       }
       if (CLOSED.has(lead.status)) {
         return fail(`${leadId} — закрита угода (${lead.status}); агент її не перевідкриває. Перевідкрити може людина в дашборді LeadDesk.`);
+      }
+      if (status === "new") { // new is set only by the app when the form arrives (resource: «Вручну в new не повертаємо»)
+        return fail(`${leadId}: у new лід ставить лише застосунок, коли приходить заявка; вручну туди не повертаємо. Лист без відповіді — лишай поточний статус.`);
       }
       const from = lead.status;
       lead.status = status;
