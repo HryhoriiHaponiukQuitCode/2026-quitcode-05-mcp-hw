@@ -1,0 +1,101 @@
+# checks · 2026-10-04T10:19Z · node v22.21.0 · branch ws05/HryhoriiHaponiukQuitCode @ 55b4206
+
+# baseline: main @ 958d2ee, fresh worktree
+
+## npm ci (main)
+$ npm ci --no-audit --no-fund
+npm warn deprecated eslint@9.39.5: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+
+added 499 packages in 4s
+exit=0
+
+## npm run lint (main)
+$ npm run lint
+
+> 2026-quitcode-05-mcp-hw@0.1.0 lint
+> eslint
+exit=0
+
+## npm run build (main), routes
+$ routes
+
+exit=0
+
+# this branch
+
+## npm run lint
+$ npm run lint
+  11:20  warning  'dirname' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 1 problem (0 errors, 1 warning)
+exit=0
+
+## npm run build, routes
+$ routes
+
+exit=0
+
+## contract (Task A)
+$ node mcp/leaddesk-server/scripts/check-contract.mjs
+PASS C15 stdout is protocol only: nothing on stdout without a client; no console.log in src/
+PASS C16 package.json: exact versions of @modelcontextprotocol/server and zod, no sdk; src/ has only .mjs
+RESULT: 16/16 PASS
+exit=0
+
+## contract self-test (Task A)
+$ node mcp/leaddesk-server/scripts/check-contract.mjs --self-test
+OK   M8 invented status hot: expected C2 to FAIL; failed = C2, C13
+OK   M9 no audit entry in the result: expected C9 to FAIL; failed = C9
+self-test: every mutant was caught by its own check
+exit=0
+
+## HTTP variant (Task E)
+$ bash mcp/leaddesk-server/scripts/check-http.sh
+RESULT: all expectations met
+exit=0
+
+## config (Task B)
+$ node docs/mcp/scripts/check-config.mjs
+PASS every mcp__<server>__ prefix is a key of .mcp.json (supabase, vercel, playwright)
+PASS deny: 41 state-changing Vercel verb prefixes (docs/mcp/connections.md)
+RESULT: all PASS
+exit=0
+
+## seed = fixture (Task B)
+$ node docs/mcp/scripts/check-seed.mjs
+PASS supabase/seed/leads.sql: every field of every lead equals materials/leads.json
+PASS no secrets or connection strings in the SQL
+RESULT: all PASS
+exit=0
+
+## Vercel deny counts (Task B)
+$ node docs/mcp/scripts/count-vercel-deny.mjs
+vercel tools in init (run without deny): 244
+walkthrough deny (11 names): 10 exist, close 10 → 234 left
+41 verb globs close 107; 5 exact names close 5
+whole deny list closes 113 → 131 left
+exit=0
+
+## links in the reports
+$ node docs/mcp/scripts/check-links.mjs
+RESULT: all references exist (5 files)
+exit=0
+
+## no Vercel identifiers left
+$ node docs/mcp/scripts/scrub-vercel.mjs --check docs/mcp/evidence/vercel-build-log.txt docs/mcp/runs/task-b/vercel-build-log-1-list-denied.md docs/mcp/runs/task-b/vercel-build-log.md docs/mcp/runs/task-b/vercel-describe.md docs/mcp/runs/task-b/vercel-tools-no-deny.md docs/mcp/runs/task-b/vercel-tools-walkthrough-deny.md docs/mcp/runs/task-b/vercel-tools.md
+clean: 7 files
+exit=0
+
+## changed-files table = diff
+$ node docs/mcp/scripts/changed-files.mjs --check
+missing in docs/mcp/verification.md: supabase/migrations/0001_leaddesk.sql
+missing in docs/mcp/verification.md: supabase/seed/leads.sql
+docs/mcp/verification.md: table differs from the diff — run with --write
+exit=1
+
+## root package files untouched
+$ git diff --exit-code --stat main -- package.json package-lock.json
+
+exit=0
+
+RESULT: a step FAILED

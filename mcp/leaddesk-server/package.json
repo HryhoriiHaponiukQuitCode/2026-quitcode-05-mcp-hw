@@ -11,7 +11,7 @@
   "scripts": {
     "start": "node src/server.mjs",
     "start:http": "node src/http.mjs",
-    "test": "node --test test/"
+    "test": "cd ../.. && node mcp/leaddesk-server/scripts/check-contract.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/node": "2.1.0",
