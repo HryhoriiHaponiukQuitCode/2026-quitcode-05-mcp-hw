@@ -40,8 +40,12 @@ for (let i = 0; i < out.length; i++) {
   blocks.push({ kind: start, text: out.slice(i, j + 1).join("\n") });
   i = j;
 }
-// a dialog redrawn while open shows up several times in a row: keep one copy
-const uniq = blocks.filter((b, i) => b.text !== blocks[i - 1]?.text);
+// a dialog redrawn while open shows up again right after itself; a partial redraw repaints only some cells,
+// so the copy can miss characters. A block whose text (spaces and frame characters aside) is a subsequence
+// of the previous block's is that same dialog: the first, complete copy is kept.
+const norm = (t) => [...t.replace(/[\s│]/g, "")];
+const subseq = (a, b) => { let i = 0; for (const ch of b) if (ch === a[i]) i++; return i === a.length; };
+const uniq = blocks.filter((b, i) => i === 0 || b.kind !== blocks[i - 1].kind || !subseq(norm(b.text), norm(blocks[i - 1].text)));
 let n = 0;
 for (const b of uniq) {
   console.log(b.kind === "mcp" ? "### `/mcp`\n" : `### Діалог ${++n}\n`);
