@@ -1,4 +1,4 @@
-# checks · 2026-10-04T10:22Z · node v22.21.0 · branch ws05/HryhoriiHaponiukQuitCode @ 41ed03a
+# checks · 2026-10-04T11:50Z · node v22.21.0 · branch ws05/HryhoriiHaponiukQuitCode @ cadf2f6
 
 # baseline: main @ 958d2ee, fresh worktree
 
@@ -53,15 +53,15 @@ exit=0
 
 ## contract (Task A)
 $ node mcp/leaddesk-server/scripts/check-contract.mjs
-PASS C15 stdout is protocol only: nothing on stdout without a client; no console.log in src/
 PASS C16 package.json: exact versions of @modelcontextprotocol/server and zod, no sdk; src/ has only .mjs
-RESULT: 16/16 PASS
+PASS C17 back to new (lead_0003 contacted → new) → isError: only the app sets new
+RESULT: 17/17 PASS
 exit=0
 
 ## contract self-test (Task A)
 $ node mcp/leaddesk-server/scripts/check-contract.mjs --self-test
-OK   M8 invented status hot: expected C2 to FAIL; failed = C2, C13
 OK   M9 no audit entry in the result: expected C9 to FAIL; failed = C9
+OK   M10 an open lead can be sent back to new: expected C17 to FAIL; failed = C17
 self-test: every mutant was caught by its own check
 exit=0
 
@@ -94,7 +94,9 @@ exit=0
 
 ## links in the reports
 $ node docs/mcp/scripts/check-links.mjs
-RESULT: all references exist (5 files)
+ABSENT BY RULE docs/mcp/runs/task-b/playwright-form-check.md: .playwright-mcp/page-2026-09-28T11-59-27-075Z.yml
+ABSENT BY RULE docs/mcp/runs/task-b/playwright-form-check.md: .playwright-mcp/page-2026-09-28T11-59-40-603Z.yml
+RESULT: all references exist (25 files; 3 links into .playwright-mcp/, not committed by rule)
 exit=0
 
 ## no Vercel identifiers left
@@ -104,7 +106,7 @@ exit=0
 
 ## changed-files table = diff
 $ node docs/mcp/scripts/changed-files.mjs --check
-docs/mcp/verification.md: table matches the diff (75 files)
+docs/mcp/verification.md: table matches the diff (81 files)
 exit=0
 
 ## root package files untouched
