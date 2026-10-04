@@ -17,6 +17,7 @@ import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { appendFileSync, mkdirSync, readFileSync, writeFileSync, realpathSync } from "node:fs";
 import { resolve, relative, isAbsolute } from "node:path";
+import { executeSqlVerdict, migrationVerdict } from "./sql-policy.mjs";
 
 const arg = (n, d) => { const i = process.argv.indexOf(n); return i > 0 ? process.argv[i + 1] : d; };
 const POLICY = arg("--policy"), CFG = resolve(arg("--mcp-config")), CWD = realpathSync(resolve(arg("--cwd")));
@@ -35,23 +36,13 @@ mkdirSync(OUT, { recursive: true });
 // ---- the policy: what a careful human approves in this step, and nothing else ----------------------
 const inside = (p) => { const a = isAbsolute(p) ? p : resolve(CWD, p); const r = relative(CWD, a); return r === "" || (!r.startsWith("..") && !isAbsolute(r)); };
 const isEnv = (p) => /(^|\/)\.env(?!\.example$)/.test(p);
-const FORBIDDEN_SQL = /\b(drop|truncate|grant|revoke|alter\s+(role|user|default|system|database)|create\s+(role|user|extension|function|trigger)|security\s+definer|delete\s+from|update\s+[\w.]+\s+set|copy\s+|pg_read|dblink|lo_import)\b/i;
 const CLARIFY = "Роби, як вважаєш правильним";
 const POLICIES = {
   // Task B: create the leads table, seed 20 rows, verify. No destructive SQL, files only the two SQL files.
   "supabase-build": (tool, input) => {
-    if (tool === "mcp__supabase__apply_migration") {
-      const q = input.query ?? "";
-      return FORBIDDEN_SQL.test(q) ? [false, "migration contains a destructive or privilege statement"] : [true, "DDL for the leads table: create table / check / index / comment only"];
-    }
-    if (tool === "mcp__supabase__execute_sql") {
-      const q = (input.query ?? "").trim();
-      if (FORBIDDEN_SQL.test(q)) return [false, "destructive or privilege statement"];
-      // an upsert changes existing rows, and a second statement after `;` would hide behind an allowed prefix
-      if (/\bon\s+conflict\b[\s\S]*\bdo\s+update\b/i.test(q)) return [false, "upsert (on conflict … do update) is not approved in this step"];
-      if (/;\s*\S/.test(q.replace(/'(?:[^']|'')*'/g, "''"))) return [false, "one statement per call"];
-      return /^(insert\s+into\s+(public\.)?leads\b|select\b|with\b[\s\S]*\bselect\b)/i.test(q) ? [true, "insert into leads or a read-only select"] : [false, "only insert into leads and select are approved in this step"];
-    }
+    // SQL: an allowlist in sql-policy.mjs (its --self-test holds the cases, incl. the PR review attacks)
+    if (tool === "mcp__supabase__apply_migration") return migrationVerdict(input.query);
+    if (tool === "mcp__supabase__execute_sql") return executeSqlVerdict(input.query);
     if (tool.startsWith("mcp__supabase__")) return [true, "read-only Supabase tool of this profile"];
     if (["Read", "Glob", "Grep"].includes(tool)) {
       const p = input.file_path ?? input.path ?? CWD;

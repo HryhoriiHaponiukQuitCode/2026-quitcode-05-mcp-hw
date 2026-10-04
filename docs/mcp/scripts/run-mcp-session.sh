@@ -50,6 +50,8 @@ START=$(date +%s)
 (cd "$CWD" && claude -p --model "$MODEL" --effort "$EFFORT" --output-format stream-json --verbose \
   --setting-sources project --strict-mcp-config --mcp-config "$CFG" --permission-mode default ${ALLOW:+--allowedTools "$ALLOW"} \
   < "$PROMPT" > "$OUT/transcript.jsonl" 2> "$OUT/stderr.txt")
-echo "exit: $? · wall: $(( $(date +%s) - START ))s" >> "$OUT/meta.txt"
+CODE=$?
+echo "exit: $CODE · wall: $(( $(date +%s) - START ))s" >> "$OUT/meta.txt"
 node "$ROOT/docs/mcp/scripts/transcript-md.mjs" "$OUT/transcript.jsonl" > "$OUT/transcript.md"
 cat "$OUT/meta.txt"
+exit "$CODE" # a failed session must not look like a successful one to the caller

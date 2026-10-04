@@ -29,6 +29,7 @@ step "contract (Task A)" node mcp/leaddesk-server/scripts/check-contract.mjs
 step "contract self-test (Task A)" node mcp/leaddesk-server/scripts/check-contract.mjs --self-test
 TAIL=1 step "HTTP variant (Task E)" bash mcp/leaddesk-server/scripts/check-http.sh
 step "config (Task B)" node docs/mcp/scripts/check-config.mjs
+TAIL=1 step "approval-host SQL policy self-test (Task B)" node docs/mcp/scripts/sql-policy.mjs --self-test
 step "seed = fixture (Task B)" node docs/mcp/scripts/check-seed.mjs
 TAIL=4 step "Vercel deny counts (Task B)" node docs/mcp/scripts/count-vercel-deny.mjs
 step "links in the reports" node docs/mcp/scripts/check-links.mjs
