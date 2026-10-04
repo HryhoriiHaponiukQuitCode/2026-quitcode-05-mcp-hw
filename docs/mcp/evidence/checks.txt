@@ -1,4 +1,4 @@
-# checks · 2026-10-04T11:53Z · node v22.21.0 · branch ws05/HryhoriiHaponiukQuitCode @ 1353b0e
+# checks · 2026-10-04T13:01Z · node v22.21.0 · branch ws05/HryhoriiHaponiukQuitCode @ c1c99b5
 
 # baseline: main @ 958d2ee, fresh worktree
 
@@ -6,7 +6,7 @@
 $ npm ci --no-audit --no-fund
 npm warn deprecated eslint@9.39.5: This version is no longer supported. Please see https://eslint.org/version-support for other options.
 
-added 499 packages in 3s
+added 499 packages in 4s
 exit=0
 
 ## npm run lint (main)
@@ -77,6 +77,11 @@ PASS deny: 41 state-changing Vercel verb prefixes (docs/mcp/connections.md)
 RESULT: all PASS
 exit=0
 
+## approval-host SQL policy self-test (Task B)
+$ node docs/mcp/scripts/sql-policy.mjs --self-test
+RESULT: 16/16 cases as expected
+exit=0
+
 ## seed = fixture (Task B)
 $ node docs/mcp/scripts/check-seed.mjs
 PASS supabase/seed/leads.sql: every field of every lead equals materials/leads.json
@@ -96,7 +101,7 @@ exit=0
 $ node docs/mcp/scripts/check-links.mjs
 ABSENT BY RULE docs/mcp/runs/task-b/playwright-form-check.md: .playwright-mcp/page-2026-09-28T11-59-27-075Z.yml
 ABSENT BY RULE docs/mcp/runs/task-b/playwright-form-check.md: .playwright-mcp/page-2026-09-28T11-59-40-603Z.yml
-RESULT: all references exist (25 files; 3 links into .playwright-mcp/, not committed by rule)
+RESULT: all references exist (27 files; 3 links into .playwright-mcp/, not committed by rule)
 exit=0
 
 ## no Vercel identifiers left
@@ -106,7 +111,7 @@ exit=0
 
 ## changed-files table = diff
 $ node docs/mcp/scripts/changed-files.mjs --check
-docs/mcp/verification.md: table matches the diff (81 files)
+docs/mcp/verification.md: table matches the diff (86 files)
 exit=0
 
 ## root package files untouched
