@@ -1,4 +1,4 @@
-# checks · 2026-10-04T10:19Z · node v22.21.0 · branch ws05/HryhoriiHaponiukQuitCode @ 55b4206
+# checks · 2026-10-04T10:22Z · node v22.21.0 · branch ws05/HryhoriiHaponiukQuitCode @ 41ed03a
 
 # baseline: main @ 958d2ee, fresh worktree
 
@@ -18,7 +18,15 @@ exit=0
 
 ## npm run build (main), routes
 $ routes
-
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/leads
+├ ƒ /api/n8n/[event]
+├ ƒ /dashboard
+├ ƒ /dashboard/leads/[id]
+├ ○ /login
+├ ƒ /quotes/[id]
+└ ○ /quotes/new
 exit=0
 
 # this branch
@@ -32,7 +40,15 @@ exit=0
 
 ## npm run build, routes
 $ routes
-
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/leads
+├ ƒ /api/n8n/[event]
+├ ƒ /dashboard
+├ ƒ /dashboard/leads/[id]
+├ ○ /login
+├ ƒ /quotes/[id]
+└ ○ /quotes/new
 exit=0
 
 ## contract (Task A)
@@ -88,14 +104,12 @@ exit=0
 
 ## changed-files table = diff
 $ node docs/mcp/scripts/changed-files.mjs --check
-missing in docs/mcp/verification.md: supabase/migrations/0001_leaddesk.sql
-missing in docs/mcp/verification.md: supabase/seed/leads.sql
-docs/mcp/verification.md: table differs from the diff — run with --write
-exit=1
+docs/mcp/verification.md: table matches the diff (75 files)
+exit=0
 
 ## root package files untouched
 $ git diff --exit-code --stat main -- package.json package-lock.json
 
 exit=0
 
-RESULT: a step FAILED
+RESULT: all steps exit 0
