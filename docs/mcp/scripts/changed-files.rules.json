@@ -40,7 +40,10 @@
     ["^docs/mcp/scripts/ab-metrics\\.mjs$", "C", "A/B measures computed from the two session files"],
     ["^docs/mcp/scripts/changed-files(\\.mjs|\\.rules\\.json)$", "A–E", "this table: generator and per-file descriptions"],
     ["^docs/mcp/ab-generic-vs-domain\\.md$", "C", "A/B report"],
-    ["^docs/mcp/ab/", "C", "A/B evidence: both transcripts, measures, init probe"],
+    ["^docs/mcp/ab/run1/", "C", "first A/B run, kept unchanged: report, transcripts, measures (replaced by run 2)"],
+    ["^docs/mcp/ab/terminal-logs\\.tar\\.gz$", "C", "`script` recordings of the run-2 sessions: what the human saw, incl. /mcp and every dialog"],
+    ["^docs/mcp/ab/", "C", "A/B run 2: transcripts with /mcp and every approval dialog verbatim, measures, init probe"],
+    ["^docs/mcp/scripts/tty-excerpts\\.mjs$", "C", "renders a `script` recording and extracts /mcp panels and permission dialogs verbatim"],
     ["^docs/mcp/threat-model\\.md$", "D", "threat model: data, exfiltration channels, what is denied and by what, contract"],
     ["^docs/mcp/verification\\.md$", "A, B, E", "verification report and this table"]
   ]

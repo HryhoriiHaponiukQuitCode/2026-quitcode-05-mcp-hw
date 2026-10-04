@@ -5,7 +5,7 @@
 //   node docs/mcp/scripts/check-links.mjs
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-const docs = ["docs/mcp", "docs/mcp/evidence", "docs/mcp/ab", "docs/mcp/runs/task-b"].flatMap((d) => readdirSync(d).filter((f) => f.endsWith(".md")).map((f) => join(d, f)));
+const docs = ["docs/mcp", "docs/mcp/evidence", "docs/mcp/ab", "docs/mcp/ab/run1", "docs/mcp/runs/task-b"].flatMap((d) => readdirSync(d).filter((f) => f.endsWith(".md")).map((f) => join(d, f)));
 let dead = 0, absentByRule = 0;
 for (const f of docs) {
   const s = readFileSync(f, "utf8");

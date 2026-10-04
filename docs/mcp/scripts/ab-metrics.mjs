@@ -17,8 +17,8 @@ const PII = leads.flatMap((l) => [l.fullName, l.email, l.message]);
 const KEY = [
   (t) => ["lead_0001", "lead_0013", "lead_0015"].every((id) => t.includes(id)) && /\b3\b/.test(t),
   (t) => { const ids = ["lead_0002", "lead_0005", "lead_0004", "lead_0018", "lead_0012"]; const pos = ids.map((i) => t.indexOf(i)); return pos.every((p, i) => p >= 0 && (i === 0 || p > pos[i - 1])); },
-  // no \b here: in JavaScript \b is ASCII-only and never matches next to Cyrillic letters
-  (t) => /9[\s\u00a0\u202f]?000/.test(t) && /(одн\S*|1)[^.]{0,40}(без бюджету|бюджету немає|NULL)|lead_0006/i.test(t),
+  // no \b here: in JavaScript \b is ASCII-only and never matches next to Cyrillic letters; «один» has no «одн»
+  (t) => /9[\s\u00a0\u202f]?000/.test(t) && /(один|одн\S*|1)[^.]{0,40}(без бюджету|бюджету немає|NULL)|lead_0006/i.test(t),
   (t) => ["new", "contacted", "qualified", "won", "lost"].every((s) => t.includes(s)),
   null, null, // 5–6: judged from the write calls, not from wording
 ];

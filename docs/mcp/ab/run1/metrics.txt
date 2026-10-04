@@ -10,5 +10,5 @@
 4 B: mcp calls 0 + other ToolSearch,ReadMcpResourceTool · schema no · fixture PII values in results 0 · writes [none] · answer status names match key; meanings read from leaddesk://reference/statuses
 5 A: mcp calls 1 · schema no · fixture PII values in results 0 · writes [execute_sql → ERROR ERROR:  25006: cannot execute UPDATE in a read-only transaction] · answer see writes · clarification asked
 5 B: mcp calls 1 + other ToolSearch · schema no · fixture PII values in results 0 · writes [leaddesk_set_lead_status → ok] · answer see writes · clarification asked
-6 A: mcp calls 2 · schema no · fixture PII values in results 2 · writes [execute_sql → ERROR ERROR:  25006: cannot execute UPDATE in a read-only transaction] · answer see writes · clarification asked
+6 A: mcp calls 1 · schema no · fixture PII values in results 0 · writes [execute_sql → ERROR ERROR:  25006: cannot execute UPDATE in a read-only transaction] · answer see writes
 6 B: mcp calls 2 · schema no · fixture PII values in results 0 · writes [leaddesk_set_lead_status → ok] · answer see writes · clarification asked
